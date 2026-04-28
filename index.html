@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sorteio de Times Peladeiros</title>
+    <title>Sorteio Peladeiros Pro</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     
@@ -52,35 +53,53 @@
 
         .lista-preview {
             list-style: none;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
             margin-bottom: 20px;
-            border-top: 1px solid #eee;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 6px;
         }
         .lista-preview li {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 8px;
             border-bottom: 1px solid #eee;
             font-size: 0.9rem;
         }
 
+        .btn-pagamento-alterar {
+            font-size: 0.7rem;
+            color: #2c3e50;
+            border: 1px solid #3498db;
+            background: #ebf5fb;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .btn-pagamento-alterar:hover { background: #3498db; color: white; }
+
         button.principal {
             display: block;
             width: 100%;
             padding: 12px;
-            background-color: #3498db;
             color: white;
             border: none;
             border-radius: 6px;
             font-size: 1rem;
             font-weight: bold;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: opacity 0.2s;
             margin-bottom: 10px;
         }
-        button.pdf { background-color: #e74c3c; }
-        button.whatsapp { background-color: #25d366; }
+        .btn-sortear { background-color: #3498db; }
+        .btn-whatsapp { background-color: #25d366; }
+        .btn-pdf { background-color: #e74c3c; }
+        .btn-importar { background-color: #607d8b; }
+        
         button:hover { opacity: 0.9; }
 
         .resultado {
@@ -140,17 +159,19 @@
             <button class="btn-add" onclick="adicionarJogador()">+</button>
         </div>
 
+        <p style="font-size: 0.8rem; color: #7f8c8d; margin-bottom: 5px;">Lista de Presença (Clique no pagamento para alterar):</p>
         <ul id="lista-pre-sorteio" class="lista-preview"></ul>
 
-        <button class="principal" onclick="sortearTimes()">Sortear Times</button>
-        <button class="principal pdf" onclick="gerarPDF()">Baixar PDF de Pagamentos</button>
-        <button class="principal whatsapp" onclick="enviarWhatsApp()">Enviar no WhatsApp</button>
+        <button class="principal btn-importar" onclick="importarWhatsApp()">Colar Lista do WhatsApp</button>
+        <button class="principal btn-sortear" onclick="sortearTimes()">Sortear Times</button>
+        <button class="principal btn-pdf" onclick="gerarPDF()">Baixar PDF de Pagamentos</button>
+        <button class="principal btn-whatsapp" onclick="enviarWhatsApp()">Enviar no WhatsApp</button>
     </div>
 
     <div id="resultado" class="resultado"></div>
 
     <script>
-        const LISTA_PRE_CADASTRADA = ["Felipe", "João", "Ricardo", "Marcelo", "Zico", "Romário", "Pelé", "Ronaldo"];
+        const LISTA_PRE_CADASTRADA = ["Jefinho", "Lacir", "Dudu", "Plinio", "Wagner", "Walace", "Charles", "Kim"];
         let listaJogadoresSorteio = [];
 
         function carregarSugestoes() {
@@ -176,60 +197,94 @@
             const inputNome = document.getElementById("nome-jogador");
             const inputPag = document.getElementById("metodo-pagamento");
             const nome = inputNome.value.trim();
-
             if (!nome) return;
-
-            const jaExiste = listaJogadoresSorteio.some(j => j.nome.toLowerCase() === nome.toLowerCase());
-            if (jaExiste) { alert("Este jogador já está na lista!"); return; }
-
-            listaJogadoresSorteio.push({ nome, pagamento: inputPag.value });
-
-            const li = document.createElement("li");
-            li.innerHTML = `<span>${nome}</span> <strong style="font-size: 0.7rem; color: #666; border: 1px solid #ddd; padding: 2px 4px; border-radius: 4px;">${inputPag.value}</strong>`;
-            document.getElementById("lista-pre-sorteio").appendChild(li);
-
+            processarNovoJogador(nome, inputPag.value);
             inputNome.value = "";
             inputNome.focus();
+        }
+
+        function processarNovoJogador(nome, pagamento) {
+            const jaExiste = listaJogadoresSorteio.some(j => j.nome.toLowerCase() === nome.toLowerCase());
+            if (jaExiste) return false;
+
+            const novoJogador = { id: Date.now() + Math.random(), nome, pagamento };
+            listaJogadoresSorteio.push(novoJogador);
+            renderizarListaPresenca();
+            return true;
+        }
+
+        // Função que altera o pagamento ao clicar
+        function alternarPagamento(id) {
+            const index = listaJogadoresSorteio.findIndex(j => j.id === id);
+            if (index !== -1) {
+                const atual = listaJogadoresSorteio[index].pagamento;
+                const opcoes = ["Pix", "Dinheiro", "Crédito"];
+                let proximo = opcoes[(opcoes.indexOf(atual) + 1) % opcoes.length];
+                listaJogadoresSorteio[index].pagamento = proximo;
+                renderizarListaPresenca();
+            }
+        }
+
+        // Atualiza a visualização da lista de presença
+        function renderizarListaPresenca() {
+            const listaUl = document.getElementById("lista-pre-sorteio");
+            listaUl.innerHTML = "";
+            listaJogadoresSorteio.forEach(j => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    <span>${j.nome}</span> 
+                    <button class="btn-pagamento-alterar" onclick="alternarPagamento(${j.id})">
+                        ${j.pagamento} 🔄
+                    </button>`;
+                listaUl.appendChild(li);
+            });
+        }
+
+        function importarWhatsApp() {
+            const textoBruto = prompt("Cole aqui a lista do WhatsApp:");
+            if (!textoBruto) return;
+            const linhas = textoBruto.split('\n');
+            let adicionados = 0;
+            linhas.forEach(linha => {
+                let nomeLimpo = linha.replace(/^[\d\.\s*-]+/, '').trim();
+                if (nomeLimpo.length > 2 && !nomeLimpo.toLowerCase().includes("pelada")) {
+                    if (processarNovoJogador(nomeLimpo, "Pix")) adicionados++;
+                }
+            });
+            if (adicionados > 0) alert(`${adicionados} jogadores importados!`);
         }
 
         function gerarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const dataHoje = document.getElementById('data-sorteio').innerText;
-
             doc.setFontSize(18);
             doc.text("Relatório de Pagamentos - Peladeiros", 14, 20);
-            
             doc.setFontSize(11);
-            doc.setTextColor(100);
             doc.text(`Data: ${dataHoje}`, 14, 30);
-
             const rows = listaJogadoresSorteio.map(j => [j.nome, j.pagamento]);
-
             doc.autoTable({
                 startY: 35,
-                head: [['Nome do Jogador', 'Forma de Pagamento']],
+                head: [['Nome', 'Pagamento']],
                 body: rows,
                 theme: 'grid',
-                headStyles: { fillColor: [52, 152, 219] }
+                headStyles: { fillColor: [44, 62, 80] }
             });
-
-            doc.save(`Pagamentos_Pelada_${new Date().toLocaleDateString('pt-BR')}.pdf`);
+            doc.save(`Pagamentos_${new Date().toLocaleDateString('pt-BR')}.pdf`);
         }
 
         function shuffle(array) {
-            const novoArray = [...array];
-            for (let i = novoArray.length - 1; i > 0; i--) {
+            const novo = [...array];
+            for (let i = novo.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [novoArray[i], novoArray[j]] = [novoArray[j], novoArray[i]];
+                [novo[i], novo[j]] = [novo[j], novo[i]];
             }
-            return novoArray;
+            return novo;
         }
 
         function sortearTimes() {
-            if (listaJogadoresSorteio.length < 2) { alert("Adicione pelo menos 2 jogadores!"); return; }
-            const total = listaJogadoresSorteio.length;
-            const numTimes = Math.ceil(total / 8); 
+            if (listaJogadoresSorteio.length < 2) return alert("Mínimo 2 jogadores!");
+            const numTimes = Math.ceil(listaJogadoresSorteio.length / 8); 
             const embaralhados = shuffle(listaJogadoresSorteio);
             const times = Array.from({ length: numTimes }, (_, i) => ({
                 nome: ["Verde", "Amarelo", "Vermelho", "Roxo"][i] || `Time ${i+1}`,
@@ -238,10 +293,10 @@
             embaralhados.forEach((jog, index) => {
                 times[index % numTimes].jogadores.push(jog);
             });
-            renderizar(times);
+            renderizarResultado(times);
         }
 
-        function renderizar(times) {
+        function renderizarResultado(times) {
             const container = document.getElementById("resultado");
             container.innerHTML = "";
             times.forEach(t => {
@@ -256,16 +311,13 @@
         function enviarWhatsApp() {
             const dataHoje = document.getElementById('data-sorteio').innerText;
             let texto = `⚽ *Sorteio da Pelada - ${dataHoje}* ⚽\n\n`;
-            
             const timesDivs = document.querySelectorAll('.time');
-            if (timesDivs.length === 0) { alert("Sorteie primeiro!"); return; }
-            
+            if (timesDivs.length === 0) return alert("Sorteie primeiro!");
             timesDivs.forEach(div => {
                 const titulo = div.querySelector('h3').innerText;
                 const jogadores = Array.from(div.querySelectorAll('li')).map(li => li.innerText);
                 texto += `*${titulo}*\n${jogadores.join('\n')}\n\n`;
             });
-            
             window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
         }
     </script>
