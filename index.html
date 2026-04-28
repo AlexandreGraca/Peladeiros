@@ -1,281 +1,273 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sorteio de Times Peladeiros</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f4f4f4;
-        padding: 16px;
-        color: #333;
-      }
-      h1 {
-        text-align: center;
-        margin: 16px 0;
-        color: #2c3e50;
-      }
-      p {
-        text-align: center;
-        margin-bottom: 16px;
-        color: #7f8c8d;
-      }
-      textarea {
-        width: 100%;
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 12px;
-        font-size: 16px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        display: block;
-        resize: vertical;
-      }
-      button {
-        display: block;
-        margin: 16px auto;
-        padding: 10px 24px;
-        background-color: #3498db;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-      button:hover {
-        background-color: #2980b9;
-      }
-      .resultado {
-        margin-top: 20px;
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 16px;
-      }
-      .time {
-        width: 100%;
-        max-width: 280px;
-        padding: 12px;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      }
-      .time h3 {
-        margin-bottom: 8px;
-        font-size: 1.1rem;
-        font-weight: 600;
-      }
-       .time li {
-  padding: 8px 0; /* Aumentei um pouco o padding para o nome respirar */
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1); /* Linha divisória sutil */
-  list-style: none;
-  text-align: center;
-}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            padding: 16px;
+            color: #333;
+        }
+        h1 { text-align: center; margin: 16px 0; color: #2c3e50; }
+        
+        .container-entrada {
+            max-width: 600px;
+            margin: 0 auto 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        input, select {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        input { flex: 2; }
+        select { flex: 1; }
+        
+        .btn-add {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 20px;
+        }
 
-/* Remove a linha do último nome para ficar mais limpo */
-.time li:last-child {
-  border-bottom: none;
-}
-      /* Cores dos times */
-      .time-verde {
-        background-color: #d4edda;
-        border-left: 4px solid #28a745;
-      }
-      .time-amarelo {
-        background-color: #fff3cd;
-        border-left: 4px solid #ffc107;
-      }
-      .time-vermelho {
-        background-color: #f8d7da;
-        border-left: 4px solid #dc3545;
-      }
-      .time-roxo {
-        background-color: #e8d7f1;
-        border-left: 4px solid #6f42c1;
-      }
-      .time-reserva {
-        background-color: #e9ecef;
-        border-left: 4px solid #6c757d;
-      }
+        .lista-preview {
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border-top: 1px solid #eee;
+        }
+        .lista-preview li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        button.principal {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-bottom: 10px;
+        }
+        button.pdf { background-color: #e74c3c; }
+        button.whatsapp { background-color: #25d366; }
+        button:hover { opacity: 0.9; }
+
+        .resultado {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+        }
+        .time {
+            width: 100%;
+            max-width: 280px;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        .time h3 {
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 5px;
+            text-align: center;
+        }
+        .time li {
+            padding: 6px 0;
+            list-style: none;
+            text-align: center;
+            font-size: 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .time-verde { background-color: #d4edda; border-left: 5px solid #28a745; }
+        .time-amarelo { background-color: #fff3cd; border-left: 5px solid #ffc107; }
+        .time-vermelho { background-color: #f8d7da; border-left: 5px solid #dc3545; }
+        .time-roxo { background-color: #e8d7f1; border-left: 5px solid #6f42c1; }
     </style>
-  </head>
-  <body>
-     <!-- Início da Logo -->
-  <div style="text-align: center; margin-bottom: 20px;">
-  <img src="https://i.imgur.com/zSl9YOk.jpeg" alt="Logo Peladeiros" style="max-width: 150px; border-radius: 50%;">
-</div>
-  <!-- Fim da Logo -->
-  ...
-    <h1>Sorteio de Times para a Pelada</hHeading>
-    <p id="data-sorteio" style="font-weight: bold; color: #555;"></p>
-    <p>Coloque um nome por linha ou cole uma lista de nomes.</p>
+</head>
+<body>
 
-    <textarea
-      id="jogadores"
-      placeholder="Ex:&#10;João&#10;Maria&#10;Pedro&#10;..."
-      rows="12"
-    ></textarea>
-    <button onclick="sortearTimes()">Sortear Times</button>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="https://i.imgur.com/zSl9YOk.jpeg" alt="Logo Peladeiros" style="max-width: 120px; border-radius: 50%;">
+    </div>
+
+    <h1>Sorteio Peladeiros</h1>
+    <p id="data-sorteio" style="text-align: center; font-weight: bold; color: #555; margin-bottom: 15px;"></p>
+
+    <div class="container-entrada">
+        <div class="form-row">
+            <input type="text" id="nome-jogador" list="jogadores-sugeridos" placeholder="Nome do jogador" onkeypress="handleKeyPress(event)">
+            <datalist id="jogadores-sugeridos"></datalist>
+
+            <select id="metodo-pagamento">
+                <option value="Pix">Pix</option>
+                <option value="Dinheiro">Dinheiro</option>
+                <option value="Crédito">Crédito</option>
+            </select>
+            <button class="btn-add" onclick="adicionarJogador()">+</button>
+        </div>
+
+        <ul id="lista-pre-sorteio" class="lista-preview"></ul>
+
+        <button class="principal" onclick="sortearTimes()">Sortear Times</button>
+        <button class="principal pdf" onclick="gerarPDF()">Baixar PDF de Pagamentos</button>
+        <button class="principal whatsapp" onclick="enviarWhatsApp()">Enviar no WhatsApp</button>
+    </div>
 
     <div id="resultado" class="resultado"></div>
 
     <script>
-      function exibirData() {
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const dataAtual = new Date().toLocaleDateString('pt-BR', options);
-  
-  // Capitaliza a primeira letra do dia da semana
-  const dataFormatada = dataAtual.charAt(0).toUpperCase() + dataAtual.slice(1);
-  
-  document.getElementById('data-sorteio').innerText = `${dataFormatada}`;
-}
+        const LISTA_PRE_CADASTRADA = ["Felipe", "João", "Ricardo", "Marcelo", "Zico", "Romário", "Pelé", "Ronaldo"];
+        let listaJogadoresSorteio = [];
 
-// Chame a função quando a página carregar
-window.onload = exibirData;
-      
-      const COR_TIME = {
-        VERDE: "Verde",
-        AMARELO: "Amarelo",
-        VERMELHO: "Vermelho",
-        ROXO: "Roxo",
-      };
-
-      // Embaralha array (Fisher–Yates)
-      function shuffle(array) {
-        const arr = [...array];
-        for (let i = arr.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-        return arr;
-      }
-
-      // Transforma texto colado em lista de jogadores
-      function parseJogadores(texto) {
-  return texto
-    .trim()
-    .split(/\n/)
-    .map((linha) => linha.trim())
-    .filter((linha) => linha !== "")
-    .map((linha) => {
-      // 1. Remove qualquer número e ponto ([ \d\. ]+)
-      // 2. Remove qualquer caractere que não seja letra, espaço ou acento ([^\w\sÀ-ú])
-      // 3. Remove espaços extras no início/fim
-      return linha
-        .replace(/[\d\.]+/g, '') 
-        .replace(/[^\w\sÀ-ú]/g, '')
-        .trim();
-    })
-    .filter((nome) => nome !== ""); // Remove linhas que ficaram vazias após a limpeza
-}
-
-      function sortearTimes() {
-        const textarea = document.getElementById("jogadores");
-        const listaNomes = parseJogadores(textarea.value);
-
-        if (listaNomes.length < 3) {
-          alert("Mínimo 3 jogadores!");
-          return;
+        function carregarSugestoes() {
+            const datalist = document.getElementById('jogadores-sugeridos');
+            LISTA_PRE_CADASTRADA.sort().forEach(nome => {
+                const option = document.createElement('option');
+                option.value = nome;
+                datalist.appendChild(option);
+            });
         }
 
-        const minPorTime = 8;
-        const maxPorTime = 9;
-        const totalTimes = Math.min(4, Math.ceil(listaNomes.length / minPorTime));
-
-        const shuffled = shuffle(listaNomes.map((nome) => ({ nome })));
-
-        const times = Array.from({ length: totalTimes }, (_, i) => {
-          const cor =
-            i === 0
-              ? COR_TIME.VERDE
-              : i === 1
-                ? COR_TIME.AMARELO
-                : i === 2
-                  ? COR_TIME.VERMELHO
-                  : COR_TIME.ROXO;
-          return { cor, jogadores: [] };
-        });
-
-        const reservas = [];
-
-        let idxTime = 0;
-        for (const jogador of shuffled) {
-          const time = times[idxTime];
-          if (time.jogadores.length < maxPorTime) {
-            time.jogadores.push(jogador);
-          } else {
-            reservas.push(jogador);
-          }
-          idxTime = (idxTime + 1) % totalTimes;
+        function exibirData() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            let data = new Date().toLocaleDateString('pt-BR', options);
+            document.getElementById('data-sorteio').innerText = data.charAt(0).toUpperCase() + data.slice(1);
         }
 
-        renderResultado(times, reservas);
-      }
+        window.onload = () => { exibirData(); carregarSugestoes(); };
 
-      function renderResultado(times, reservas) {
-        const divResultado = document.getElementById("resultado");
-        divResultado.innerHTML = "";
+        function handleKeyPress(e) { if (e.key === 'Enter') adicionarJogador(); }
 
-        times.forEach((time) => {
-          const div = document.createElement("div");
-          div.className = `time time-${time.cor.toLowerCase()}`;
-          div.innerHTML = `
-  <h3>${time.cor} (${time.jogadores.length})</h3>
-  <ul>
-    ${time.jogadores
-      .map((j) => `<li>${j.nome}</li>`)
-      .join("")}
-  </ul>
-`;
-          divResultado.appendChild(div);
-        });
+        function adicionarJogador() {
+            const inputNome = document.getElementById("nome-jogador");
+            const inputPag = document.getElementById("metodo-pagamento");
+            const nome = inputNome.value.trim();
 
-        if (reservas.length > 0) {
-          const divReservas = document.createElement("div");
-          divReservas.className = "time time-reserva";
-          divReservas.innerHTML = `
-            <h3>Reservas</h3>
-            <ul>
-              ${reservas.map((j) => `<li>${j.nome}</li>`).join("")}
-            </ul>
-          `;
-          divResultado.appendChild(divReservas);
+            if (!nome) return;
+
+            const jaExiste = listaJogadoresSorteio.some(j => j.nome.toLowerCase() === nome.toLowerCase());
+            if (jaExiste) { alert("Este jogador já está na lista!"); return; }
+
+            listaJogadoresSorteio.push({ nome, pagamento: inputPag.value });
+
+            const li = document.createElement("li");
+            li.innerHTML = `<span>${nome}</span> <strong style="font-size: 0.7rem; color: #666; border: 1px solid #ddd; padding: 2px 4px; border-radius: 4px;">${inputPag.value}</strong>`;
+            document.getElementById("lista-pre-sorteio").appendChild(li);
+
+            inputNome.value = "";
+            inputNome.focus();
         }
-      }
+
+        function gerarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const dataHoje = document.getElementById('data-sorteio').innerText;
+
+            doc.setFontSize(18);
+            doc.text("Relatório de Pagamentos - Peladeiros", 14, 20);
+            
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Data: ${dataHoje}`, 14, 30);
+
+            const rows = listaJogadoresSorteio.map(j => [j.nome, j.pagamento]);
+
+            doc.autoTable({
+                startY: 35,
+                head: [['Nome do Jogador', 'Forma de Pagamento']],
+                body: rows,
+                theme: 'grid',
+                headStyles: { fillColor: [52, 152, 219] }
+            });
+
+            doc.save(`Pagamentos_Pelada_${new Date().toLocaleDateString('pt-BR')}.pdf`);
+        }
+
+        function shuffle(array) {
+            const novoArray = [...array];
+            for (let i = novoArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [novoArray[i], novoArray[j]] = [novoArray[j], novoArray[i]];
+            }
+            return novoArray;
+        }
+
+        function sortearTimes() {
+            if (listaJogadoresSorteio.length < 2) { alert("Adicione pelo menos 2 jogadores!"); return; }
+            const total = listaJogadoresSorteio.length;
+            const numTimes = Math.ceil(total / 8); 
+            const embaralhados = shuffle(listaJogadoresSorteio);
+            const times = Array.from({ length: numTimes }, (_, i) => ({
+                nome: ["Verde", "Amarelo", "Vermelho", "Roxo"][i] || `Time ${i+1}`,
+                jogadores: []
+            }));
+            embaralhados.forEach((jog, index) => {
+                times[index % numTimes].jogadores.push(jog);
+            });
+            renderizar(times);
+        }
+
+        function renderizar(times) {
+            const container = document.getElementById("resultado");
+            container.innerHTML = "";
+            times.forEach(t => {
+                const div = document.createElement("div");
+                div.className = `time time-${t.nome.toLowerCase()}`;
+                let listaHtml = t.jogadores.map(j => `<li>${j.nome}</li>`).join("");
+                div.innerHTML = `<h3>${t.nome} (${t.jogadores.length})</h3><ul>${listaHtml}</ul>`;
+                container.appendChild(div);
+            });
+        }
+
+        function enviarWhatsApp() {
+            const dataHoje = document.getElementById('data-sorteio').innerText;
+            let texto = `⚽ *Sorteio da Pelada - ${dataHoje}* ⚽\n\n`;
+            
+            const timesDivs = document.querySelectorAll('.time');
+            if (timesDivs.length === 0) { alert("Sorteie primeiro!"); return; }
+            
+            timesDivs.forEach(div => {
+                const titulo = div.querySelector('h3').innerText;
+                const jogadores = Array.from(div.querySelectorAll('li')).map(li => li.innerText);
+                texto += `*${titulo}*\n${jogadores.join('\n')}\n\n`;
+            });
+            
+            window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
+        }
     </script>
-    <button onclick="enviarWhatsApp()" style="background-color: #075e54;">
-  Enviar no WhatsApp
-</button>
-
-<script>
-function enviarWhatsApp() {
-    const dataHoje = new Date().toLocaleDateString('pt-BR', { 
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-    });
-
-    // Usamos \n em vez de %0A para melhor compatibilidade com o encodeURIComponent
-    let texto = `⚽ *Sorteio da Pelada - ${dataHoje}* ⚽\n\n`;
-    
-    const containers = document.querySelectorAll('.time');
-    
-    containers.forEach(c => {
-        const titulo = c.querySelector('h3').innerText;
-        // Pegamos os nomes da lista
-        const nomes = Array.from(c.querySelectorAll('li')).map(li => li.innerText);
-        
-        // Adicionamos o título em negrito (com asterisco de fechamento) e a lista
-        texto += `*${titulo}*\n${nomes.join(', ')}\n\n`;
-    });
-
-    // encodeURIComponent codifica corretamente os caracteres para a URL do WhatsApp
-    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
-}
-</script>
-  </body>
+</body>
 </html>
