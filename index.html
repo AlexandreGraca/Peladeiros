@@ -271,9 +271,14 @@
             <h4>⚽ Desde 1982 🍻🍖</h4>
             <h6>Futebol & Resenha</h6>
             <h3>Login</h3>
-            <input type="email" id="auth-email" class="auth-input" placeholder="E-mail">
-            <input type="password" id="auth-pass" class="auth-input" placeholder="Senha">
-            <button class="btn-auth" onclick="handleLogin()">Entrar</button>
+            <p style="margin-bottom: 20px; color: #666;">Acesso Restrito</p>
+
+            <button class="btn-auth" onclick="loginGoogle()"
+                style="display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #444; border: 1px solid #ddd;">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
+                Entrar com Google
+            </button>
+
             <p id="error-login" style="color:red; font-size:0.8rem; margin-top:10px; display:none;"></p>
         </div>
     </div>
@@ -374,11 +379,25 @@
         const db = firebase.firestore();
         let jogadores = []; let timesAtuais = [];
 
-        async function handleLogin() {
-            const e = document.getElementById('auth-email').value.trim().toLowerCase();
-            const p = document.getElementById('auth-pass').value;
-            if (!EMAILS_PERMITIDOS.includes(e)) { alert("Não autorizado"); return; }
-            try { await auth.signInWithEmailAndPassword(e, p); } catch (err) { alert("Erro de login"); }
+        async function loginGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+
+            try {
+                const result = await auth.signInWithPopup(provider);
+                const user = result.user;
+
+                // Verificação de Segurança: Só permite o SEU e-mail
+                if (!EMAILS_PERMITIDOS.includes(user.email.toLowerCase())) {
+                    alert("Acesso Negado: Este e-mail não tem permissão de administrador.");
+                    await auth.signOut(); // Desloga imediatamente se não for você
+                    return;
+                }
+
+                console.log("Logado como:", user.displayName);
+            } catch (error) {
+                console.error("Erro no login:", error);
+                alert("Falha na autenticação com o Google.");
+            }
         }
 
         auth.onAuthStateChanged(u => {
