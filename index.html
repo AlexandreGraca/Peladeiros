@@ -549,40 +549,74 @@
             }
         }
 
-        function gerarPDF() {
+       function gerarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const dataF = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
 
             doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
 
+            // Filtra apenas jogadores confirmados ou goleiros
             const confirmados = jogadores.filter(j => ((parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)) >= 15 || j.isGoleiro);
+
             let tPix = 0, tDin = 0, tCre = 0;
 
             const rows = confirmados.map(j => {
+                // GARANTIA: Converte para número puro, removendo qualquer caractere estranho
                 const v1 = Number(String(j.v1).replace(/[^0-9.-]+/g, "")) || 0;
                 const v2 = Number(String(j.v2).replace(/[^0-9.-]+/g, "")) || 0;
+                const total = v1 + v2;
 
+                const temCredito = (j.p1 === "Crédito" || j.p2 === "Crédito");
+
+                // Soma matemática real para o resumo
+                // Localize este trecho dentro da função gerarPDF
                 [{ v: v1, p: j.p1 }, { v: v2, p: j.p2 }].forEach(pg => {
-                    const cat = String(pg.p).toLowerCase();
-                    if (cat.includes("pix")) tPix += pg.v;
-                    else if (cat.includes("dinheiro")) tDin += pg.v;
-                    else if (cat.includes("crédito") || cat.includes("credito")) tCre += pg.v;
+                    // Convertemos a categoria para minúsculo para evitar erro de digitação
+                    const categoria = String(pg.p).toLowerCase().trim();
+
+                    if (categoria.includes("pix")) {
+                        tPix += pg.v;
+                    } else if (categoria.includes("dinheiro")) {
+                        tDin += pg.v;
+                    } else if (categoria.includes("crédito") || categoria.includes("credito")) {
+                        tCre += pg.v;
+                    }
                 });
 
-                return [j.nome, j.isGoleiro ? "ISENTO" : `R$ ${v1.toFixed(2)}`, v2 > 0 ? `R$ ${v2.toFixed(2)}` : "-", `R$ ${(v1 + v2).toFixed(2)}`];
+                return [
+                    j.nome,
+                    j.isGoleiro ? "ISENTO" : `${j.p1}: R$ ${v1.toFixed(2)}`,
+                    (!j.isGoleiro && v2 > 0) ? `${j.p2}: R$ ${v2.toFixed(2)}` : "-",
+                    `R$ ${total.toFixed(2)}`,
+                    temCredito
+                ];
             });
 
+            // Tabela de Jogadores
             doc.autoTable({
                 startY: 25,
-                head: [['Nome', 'Vlr 1', 'Vlr 2', 'Total']],
-                body: rows
+                head: [['Nome', 'Pagamento 1', 'Pagamento 2', 'Total']],
+                body: rows.map(r => r.slice(0, 4)),
+                styles: { font: "helvetica", fontSize: 10 },
+                didParseCell: function (data) {
+                    if (data.section === 'body' && rows[data.row.index][4] === true) {
+                        data.cell.styles.textColor = [231, 76, 60]; // Vermelho para Crédito
+                    }
+                }
             });
 
+            // Tabela de Resumo (Agora com valores somados corretamente)
             doc.autoTable({
                 startY: doc.lastAutoTable.finalY + 10,
-                head: [['Resumo', 'Total']],
-                body: [['Pix', `R$ ${tPix.toFixed(2)}`], ['Dinheiro', `R$ ${tDin.toFixed(2)}`], ['Crédito', `R$ ${tCre.toFixed(2)}`], ['GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]]
+                head: [['Resumo Financeiro', 'Valor Total']],
+                body: [
+                    ['Pix', `R$ ${tPix.toFixed(2)}`],
+                    ['DINHEIRO', `R$ ${tDin.toFixed(2)}`],
+                    ['CRÉDITO', `R$ ${tCre.toFixed(2)}`],
+                    ['TOTAL GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]
+                ],
+                headStyles: { fillColor: [46, 204, 113] }
             });
 
             doc.save(`Financeiro_${dataF}.pdf`);
@@ -677,24 +711,60 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
 
-        async function importarWhatsApp() {
-            const txt = prompt("Cole a lista:");
+       async function importarWhatsApp() {
+            const txt = prompt("Cole a lista do WhatsApp:");
             if (!txt) return;
+
             const linhas = txt.split('\n');
             const batch = db.batch();
-            const existentes = new Set(jogadores.map(j => j.nome.toLowerCase().trim()));
 
-            linhas.forEach(l => {
+            // 1. Criamos um Set com os nomes que já estão no sistema (para busca rápida)
+            // Usamos toLowerCase() para garantir que "Jefinho" e "jefinho" sejam vistos como iguais
+            const nomesExistentes = new Set(jogadores.map(j => j.nome.toLowerCase().trim()));
+
+            // 2. Criamos um Set para controlar o que estamos tentando inserir NESTA importação
+            // Isso evita que nomes repetidos dentro do próprio texto colado entrem (ex: os vários "Pernambuco")
+            const nomesNestaImportacao = new Set();
+
+            // Pulamos a primeira linha (título) e processamos o resto
+            linhas.slice(1).forEach(l => {
+                // Limpa números e espaços (ex: "25 Lucas" vira "Lucas")
                 let n = l.replace(/^[\d\.\s*-]+/, '').trim();
-                if (n.length > 2 && !existentes.has(n.toLowerCase())) {
-                    const ref = db.collection("jogadores").doc();
-                    batch.set(ref, { nome: n, v1: 0, p1: "Pix", v2: 0, p2: "-", idade: 0, nivel: 3, isGoleiro: false });
-                    existentes.add(n.toLowerCase());
+                let nLower = n.toLowerCase();
+
+                // Filtros de validação
+                const palavrasChaveTitulo = ["churrasco", "lista", "pelada", "dia", "horário", "confirmados"];
+                const ehTitulo = palavrasChaveTitulo.some(p => nLower.includes(p));
+
+                if (n.length > 2 && !ehTitulo) {
+                    // SÓ ADICIONA SE:
+                    // - Não estiver no banco de dados (nomesExistentes)
+                    // - Não tiver sido processado nesta rodada (nomesNestaImportacao)
+                    if (!nomesExistentes.has(nLower) && !nomesNestaImportacao.has(nLower)) {
+                        const novoRef = db.collection("jogadores").doc();
+                        batch.set(novoRef, {
+                            nome: n,
+                            v1: 0,
+                            p1: "❖ PIX",
+                            v2: 0,
+                            p2: "-",
+                            isGoleiro: false
+                        });
+
+                        // Adicionamos ao controle temporário para não repetir no próximo loop
+                        nomesNestaImportacao.add(nLower);
+                    }
                 }
             });
-            await batch.commit();
-        }
-    </script>
+
+            try {
+                await batch.commit();
+                alert(`Importação concluída! ${nomesNestaImportacao.size} novos jogadores adicionados.`);
+            } catch (e) {
+                console.error("Erro na importação: ", e);
+                alert("Erro ao salvar no banco de dados.");
+            }
+        }    </script>
 </body>
 
 </html>
