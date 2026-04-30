@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Peladeiros Pro - Full Cloud</title>
+    <title>Peladeiros</title>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -287,7 +287,7 @@
         <header>
             <button class="btn-logout" onclick="logout()">Sair</button>
             <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
-            <h1 style="font-size: 1.3rem; margin-bottom: 2px;">⚽ Peladeiros ⚽</h1>
+            <h1 style="font-size: 1.3rem; margin-bottom: 2px;">⚽ Sorteio ⚽</h1>
             <p id="data-topo" style="font-size: 0.85rem; color: #7f8c8d; font-weight: bold;"></p>
         </header>
 
@@ -320,9 +320,7 @@
 
             <!-- Bloco do QR Code -->
             <div style="text-align: center; margin: 15px 0;">
-                <p style="font-size: 0.7rem; font-weight: bold; color: var(--primary); margin-bottom: 5px;">ESCANEIE
-                    PARA PAGAR
-                    (PIX)</p>
+                <p style="font-size: 0.7rem; font-weight: bold; color: var(--primary); margin-bottom: 5px;">QRCODE (PIX)</p>
                 <img src="https://i.imgur.com/5Dz3zDQ.jpeg" alt="QR Code Pix"
                     style="width: 150px; height: 150px; border: 1px solid #ddd; border-radius: 8px; padding: 5px;">
             </div>
@@ -355,6 +353,7 @@
             <div class="modal-row">
                 <input type="number" id="val2" class="auth-input" placeholder="Valor">
                 <select id="pag2">
+                    <option value="-">-</option>
                     <option value="Pix"> ❖ PIX</option>
                     <option value="Dinheiro">💲 Dinheiro</option>
                     <option value="Crédito">💳 Crédito</option>
@@ -375,7 +374,7 @@
     </div>
 
     <script>
-        const EMAILS_PERMITIDOS = ["alexandre.gcomp@gmail.com"];
+        const EMAILS_PERMITIDOS = ["alexandre.gcomp@gmail.com", "jeffinho648@gmail.com"];
         const firebaseConfig = {
             apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
             authDomain: "dbpeladeiros.firebaseapp.com",
