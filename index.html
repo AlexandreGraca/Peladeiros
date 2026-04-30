@@ -854,7 +854,7 @@
 
         function gerarQrCodeDinamico(nomeJogador) {
     const chavePix = "associacaopeladeiros.fr@gmail.com"; 
-    const nomeBeneficiario = "Alexandre Luiz Graca";
+    const nomeBeneficiario = "ALEXANDRE LUIZ GRACA";
     const cidade = "JUIZ DE FORA";
     const valor = "15.00";
     
@@ -863,13 +863,12 @@
     const mes = String(hoje.getMonth() + 1).padStart(2, '0');
     const dataFormatada = `${dia}${mes}`;
 
-    // Descrição limpa (sem caracteres especiais para evitar erro no banco)
-    const descricao = `PELADA${dataFormatada}${nomeJogador.substring(0, 8)}`.replace(/\s/g, '').toUpperCase();
+    // Descrição sem espaços ou caracteres especiais
+    const descricao = `PELADA${dataFormatada}${nomeJogador.substring(0, 8)}`.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
-    // Função auxiliar para formatar cada bloco do Pix (ID + Tamanho + Conteúdo)
     const f = (id, conteudo) => id + conteudo.length.toString().padStart(2, '0') + conteudo;
 
-    // Montagem dos Blocos (Padrão BRCode)
+    // Montagem do Payload seguindo o padrão EMV
     const payloadChave = f('01', chavePix);
     const merchantAccount = f('26', '0014BR.GOV.BCB.PIX' + payloadChave);
     const merchantCategory = '52040000';
@@ -881,33 +880,36 @@
     const infoAdicional = f('05', descricao);
     const dataObjects = f('62', infoAdicional);
 
-    // Payload Final sem o CRC16 (o código final 6304 que os bancos aceitam como Pix Estático simples)
-    let payloadCompleto = '000201' + merchantAccount + merchantCategory + transactionCurrency + 
-                          transactionAmount + countryCode + merchantName + merchantCity + dataObjects + '6304';
+    let payloadSemCRC = '000201' + merchantAccount + merchantCategory + transactionCurrency + 
+                        transactionAmount + countryCode + merchantName + merchantCity + dataObjects + '6304';
 
+    // Cálculo do CRC16 (O segredo para parar de dar erro)
+    function calcularCRC16(str) {
+        let crc = 0xFFFF;
+        for (let i = 0; i < str.length; i++) {
+            crc ^= str.charCodeAt(i) << 8;
+            for (let j = 0; j < 8; j++) {
+                if ((crc & 0x8000) !== 0) {
+                    crc = (crc << 1) ^ 0x1021;
+                } else {
+                    crc <<= 1;
+                }
+            }
+        }
+        return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    const payloadFinal = payloadSemCRC + calcularCRC16(payloadSemCRC);
+    
     // Gerar a URL do QR Code
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(payloadCompleto)}`;
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(payloadFinal)}`;
     
     const area = document.getElementById('qrcode-area');
     area.innerHTML = `<img src="${qrCodeUrl}" style="border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: white;">`;
     document.getElementById('nome-qr').innerText = nomeJogador.toUpperCase();
     document.getElementById('container-pix').style.display = 'block';
 }
-
-        function carregar() {
-            const elementoData = document.getElementById('data-topo');
-            if (elementoData) {
-                const dataHoje = new Date();
-                const opcoes = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-                elementoData.innerText = dataHoje.toLocaleDateString('pt-BR', opcoes);
-            }
-
-            db.collection("jogadores").orderBy("nome").onSnapshot(snap => {
-                jogadores = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderizar();
-            });
-        }
-
+        
         function abrirNovo() {
             const n = document.getElementById('inNome').value.trim();
             if (!n) return;
