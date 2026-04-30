@@ -479,7 +479,9 @@
             document.getElementById('idade').value = "";
             document.getElementById('nivelTecnico').value = "3";
             document.getElementById('modalPagamento').style.display = 'flex';
-        }
+            gerarQrCodeDinamico(n);
+            document.getElementById('modalPagamento').style.display = 'flex';
+            }
 
         async function salvarPagamento() {
             const id = document.getElementById('editId').value;
@@ -570,6 +572,8 @@
             document.getElementById('val2').value = j.v2 || "";
             document.getElementById('idade').value = j.idade || "";
             document.getElementById('nivelTecnico').value = j.nivel || 3;
+            document.getElementById('modalPagamento').style.display = 'flex';
+            gerarQrCodeDinamico(j.nome);
             document.getElementById('modalPagamento').style.display = 'flex';
         }
 
