@@ -748,23 +748,59 @@
             });
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
-
-        async function importarWhatsApp() {
-            const txt = prompt("Cole a lista:");
+async function importarWhatsApp() {
+            const txt = prompt("Cole a lista do WhatsApp:");
             if (!txt) return;
+
             const linhas = txt.split('\n');
             const batch = db.batch();
-            const existentes = new Set(jogadores.map(j => j.nome.toLowerCase().trim()));
 
-            linhas.forEach(l => {
+            // 1. Criamos um Set com os nomes que já estão no sistema (para busca rápida)
+            // Usamos toLowerCase() para garantir que "Jefinho" e "jefinho" sejam vistos como iguais
+            const nomesExistentes = new Set(jogadores.map(j => j.nome.toLowerCase().trim()));
+
+            // 2. Criamos um Set para controlar o que estamos tentando inserir NESTA importação
+            // Isso evita que nomes repetidos dentro do próprio texto colado entrem (ex: os vários "Pernambuco")
+            const nomesNestaImportacao = new Set();
+
+            // Pulamos a primeira linha (título) e processamos o resto
+            linhas.slice(1).forEach(l => {
+                // Limpa números e espaços (ex: "25 Lucas" vira "Lucas")
                 let n = l.replace(/^[\d\.\s*-]+/, '').trim();
-                if (n.length > 2 && !existentes.has(n.toLowerCase())) {
-                    const ref = db.collection("jogadores").doc();
-                    batch.set(ref, { nome: n, v1: 0, p1: "Pix", v2: 0, p2: "-", idade: 0, nivel: 3, isGoleiro: false });
-                    existentes.add(n.toLowerCase());
+                let nLower = n.toLowerCase();
+
+                // Filtros de validação
+                const palavrasChaveTitulo = ["churrasco", "lista", "pelada", "dia", "horário", "confirmados"];
+                const ehTitulo = palavrasChaveTitulo.some(p => nLower.includes(p));
+
+                if (n.length > 2 && !ehTitulo) {
+                    // SÓ ADICIONA SE:
+                    // - Não estiver no banco de dados (nomesExistentes)
+                    // - Não tiver sido processado nesta rodada (nomesNestaImportacao)
+                    if (!nomesExistentes.has(nLower) && !nomesNestaImportacao.has(nLower)) {
+                        const novoRef = db.collection("jogadores").doc();
+                        batch.set(novoRef, {
+                            nome: n,
+                            v1: 0,
+                            p1: "❖ PIX",
+                            v2: 0,
+                            p2: "-",
+                            isGoleiro: false
+                        });
+
+                        // Adicionamos ao controle temporário para não repetir no próximo loop
+                        nomesNestaImportacao.add(nLower);
+                    }
                 }
             });
-            await batch.commit();
+
+            try {
+                await batch.commit();
+                alert(`Importação concluída! ${nomesNestaImportacao.size} novos jogadores adicionados.`);
+            } catch (e) {
+                console.error("Erro na importação: ", e);
+                alert("Erro ao salvar no banco de dados.");
+            }
         }
     </script>
 </body>
