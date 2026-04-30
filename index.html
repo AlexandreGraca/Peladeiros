@@ -624,61 +624,79 @@
         }
 
         function sortear() {
-            // Filtra quem pagou ou é goleiro
-            const ativos = jogadores.filter(j => (j.v1 + j.v2) >= 15 || j.isGoleiro);
-            const totalJogadores = ativos.length;
+                const ativos = jogadores.filter(j => (j.v1 + j.v2) >= 15 || j.isGoleiro);
+                const totalJogadores = ativos.length;
 
-            // Validação de limite (mínimo 7 para 1 time, 14 para 2, etc)
-            if (totalJogadores < 7) return alert("Poucos jogadores! Mínimo de 7.");
-
-            // Cálculo dinâmico de quantos times (alvo de 9 por time)
-            const qtdTimes = Math.round(totalJogadores / 9) || 1;
-
-            // Verifica se a divisão média fica entre 7 e 9
-            const media = totalJogadores / qtdTimes;
-            if (media < 7 || media > 9) {
-                return alert(`Não é possível dividir ${totalJogadores} jogadores em times de 7 a 9. Atualmente a média está em ${media.toFixed(1)}.`);
-            }
-
-            const goleiros = ativos.filter(j => j.isGoleiro).sort(() => Math.random() - 0.5);
-            const linha = ativos.filter(j => !j.isGoleiro).sort((a, b) => (b.nivel || 0) - (a.nivel || 0) || Math.random() - 0.5);
-
-            // Definição de cores para os cards
-            // Dentro da função sortear()
-            const configTimes = [
-                { nome: "Verde", cor: "#e8f5e9", borda: "#27ae60" },
-                { nome: "Amarelo", cor: "#fffde7", borda: "#f1c40f" },
-                { nome: "Vermelho", cor: "#ffebee", borda: "#e74c3c" },
-                { nome: "Roxo", cor: "#f3e5f5", borda: "#8e44ad" }, // Azul alterado para Roxo
-                { nome: "Laranja", cor: "#fff3e0", borda: "#e67e22" } // Opção extra caso tenha 5 times
-            ];
-
-            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
-                nome: configTimes[i]?.nome || `Time ${i + 1}`,
-                corFundo: configTimes[i]?.cor || "#f9f9f9",
-                corBorda: configTimes[i]?.borda || "#ccc",
-                membros: [],
-                somaNivel: 0
-            }));
-
-            // 1. Distribui Goleiros
-            goleiros.forEach((g, i) => {
-                if (timesAtuais[i % qtdTimes]) {
-                    timesAtuais[i % qtdTimes].membros.push('🧤 ' + g.nome);
+                if (totalJogadores < 16) {
+                    return alert("Mínimo de 16 jogadores para realizar o sorteio.");
                 }
-            });
 
-            // 2. Distribui Linha (Equilíbrio Snake)
-            linha.forEach(j => {
-                // Encontra o time com menos jogadores e menor nível
-                timesAtuais.sort((a, b) => a.membros.length - b.membros.length || a.somaNivel - b.somaNivel);
-                timesAtuais[0].membros.push(`${j.nome} (${j.nivel || 3}★)`);
-                timesAtuais[0].somaNivel += (j.nivel || 3);
-            });
+                // 1. Define a quantidade de times tentando manter a média de 8 a 9
+                // Se tivermos 20 pessoas, ele cria 2 times (18 pessoas) e o resto vai pro Laranja
+                let qtdTimes = Math.floor(totalJogadores / 8);
+                if (qtdTimes === 0) qtdTimes = 1;
 
-            renderizarTimes();
-        }
+                const goleiros = ativos.filter(j => j.isGoleiro).sort(() => Math.random() - 0.5);
+                const linha = ativos.filter(j => !j.isGoleiro).sort((a, b) => {
+                    if (b.habilidade !== a.habilidade) return b.habilidade - a.habilidade;
+                    return a.idade - b.idade;
+                });
 
+                // 2. Inicializar os times principais
+                const nomesCores = ["Verde", "Amarelo", "Vermelho", "Roxo"];
+                timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
+                    nome: nomesCores[i] || `Time ${i + 1}`,
+                    membros: [],
+                    somaHabilidade: 0
+                }));
+
+                // 3. Criar o Time Laranja para excedentes
+                const timeLaranja = { nome: "Laranja (Excedentes)", membros: [], somaHabilidade: 0 };
+
+                // 4. Distribuir Goleiros nos times principais
+                goleiros.forEach((g, i) => {
+                    if (i < qtdTimes) {
+                        timesAtuais[i].membros.push('🧤 ' + g.nome);
+                    } else {
+                        timeLaranja.membros.push('🧤 ' + g.nome);
+                    }
+                });
+
+                // 5. Distribuir Linha com limite de 9 por time
+                linha.forEach(j => {
+                    // Ordena times principais por quem tem menos habilidade e ainda tem vaga (< 9)
+                    const timesComVaga = timesAtuais.filter(t => t.membros.length < 9);
+
+                    if (timesComVaga.length > 0) {
+                        timesComVaga.sort((a, b) => a.somaHabilidade - b.somaHabilidade);
+                        timesComVaga[0].membros.push(j.nome + ` (${j.idade}a)`);
+                        timesComVaga[0].somaHabilidade += (j.habilidade || 3);
+                    } else {
+                        // Se todos os principais estiverem com 9, vai pro Laranja
+                        timeLaranja.membros.push(j.nome + ` (${j.idade}a)`);
+                    }
+                });
+
+                // Adiciona o Laranja na lista final se ele tiver alguém
+                if (timeLaranja.membros.length > 0) {
+                    timesAtuais.push(timeLaranja);
+                }
+
+                // 6. Renderizar na tela
+                const box = document.getElementById('times');
+                box.innerHTML = "<h3>Divisão de Times</h3>";
+                timesAtuais.forEach(t => {
+                    const corBorda = t.nome.includes("Laranja") ? "#e67e22" : "#2c3e50";
+                    box.innerHTML += `
+            <div style="padding:15px; margin:10px 0; border-radius:8px; background:#fff; border:1px solid #ddd; border-left:8px solid ${corBorda};">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <strong style="color:${corBorda}">${t.nome.toUpperCase()}</strong>
+                    <span style="font-size:0.8rem; background:#eee; padding:2px 8px; border-radius:10px;">${t.membros.length} jogadores</span>
+                </div>
+                <div style="font-size:0.9rem; line-height:1.6; color:#444;">${t.membros.join('<br>')}</div>
+            </div>`;
+                });
+            }
         function renderizarTimes() {
             const div = document.getElementById('times');
             div.innerHTML = "<h2 style='margin-top:20px; text-align:center;'>Equipes Sorteadas</h2>";
