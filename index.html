@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sorteio Peladeiros</title>
+    <title>Peladeiros Pro - Full Cloud</title>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -276,7 +276,7 @@
             <button class="btn-auth" onclick="loginGoogle()"
                 style="display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #444; border: 1px solid #ddd;">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
-                Entrar com Conta Google
+                Entrar com Google
             </button>
 
             <p id="error-login" style="color:red; font-size:0.8rem; margin-top:10px; display:none;"></p>
@@ -318,444 +318,18 @@
             <p id="msgAviso" style="color: var(--danger); font-size: 0.7rem; display: none;">Total mínimo R$ 15,00</p>
             <input type="hidden" id="editId">
 
-            <!-- Bloco do QR Code Dinâmico -->
-<div id="container-pix" style="text-align: center; margin: 15px 0; display: none;">
-    <p style="font-size: 0.7rem; font-weight: bold; color: var(--primary); margin-bottom: 5px;">
-        PAGAMENTO PIX: <span id="nome-qr"></span>
-    </p>
-    <div id="qrcode-area">
-        <!-- O QR Code será inserido aqui via JS -->
-    </div>
-    <p style="font-size: 0.6rem; color: #7f8c8d; margin-top: 5px;">Valor sugerido: R$ 15,00</p>
-</div>
-
-            <div class="modal-row">
-                <input type="number" id="idade" class="auth-input" placeholder="Idade">
-                <select id="nivelTecnico" class="auth-input">
-                    <option value="5">⭐⭐⭐⭐⭐ (Craque)</option>
-                    <option value="4">⭐⭐⭐⭐ (Bom)</option>
-                    <option value="3" selected>⭐⭐⭐ (Médio)</option>
-                    <option value="2">⭐⭐ (Esforçado)</option>
-                    <option value="1">⭐ (Perna de Pau)</option>
-                </select>
+            <!-- Bloco do QR Code -->
+            <div style="text-align: center; margin: 15px 0;">
+                <p style="font-size: 0.7rem; font-weight: bold; color: var(--primary); margin-bottom: 5px;">ESCANEIE
+                    PARA PAGAR
+                    (PIX)</p>
+                <img src="https://i.imgur.com/5Dz3zDQ.jpeg" alt="QR Code Pix"
+                    style="width: 150px; height: 150px; border: 1px solid #ddd; border-radius: 8px; padding: 5px;">
             </div>
 
-            <label style="font-size: 0.7rem; font-weight: bold;">PAGAMENTO 1</label>
-            <div class="modal-row">
-                <input type="number" id="val1" class="auth-input" placeholder="Valor">
-                <select id="pag1">
-                    <option value="Pix"> ❖ PIX</option>
-                    <option value="Dinheiro">💲 Dinheiro</option>
-                    <option value="Crédito">💳 Crédito</option>
-                </select>
-            </div>
-
-            <label style="font-size: 0.7rem; font-weight: bold;">PAGAMENTO 2 (OPCIONAL)</label>
-            <div class="modal-row">
-                <input type="number" id="val2" class="auth-input" placeholder="Valor">
-                <select id="pag2">
-                    <option value="-">-</option>
-                    <option value="Pix"> ❖ PIX</option>
-                    <option value="Dinheiro">💲 Dinheiro</option>
-                    <option value="Crédito">💳 Crédito</option>
-                </select>
-            </div>
-
-            <button
-                style="width:100%; padding:10px; background:var(--goleiro); color:white; border:none; border-radius:8px; margin-bottom:10px; font-weight:bold;"
-                onclick="salvarGoleiro()">🧤 MARCAR COMO GOLEIRO</button>
-            <div style="display:flex; gap:10px;">
-                <button style="flex:1; padding:10px; background:#ccc; border:none; border-radius:8px;"
-                    onclick="fecharModal()">Cancelar</button>
-                <button
-                    style="flex:1; padding:10px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold;"
-                    onclick="salvarPagamento()">Confirmar</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const EMAILS_PERMITIDOS = ["alexandre.gcomp@gmail.com", "jeffinho648@gmail.com"];
-        const firebaseConfig = {
-            apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
-            authDomain: "dbpeladeiros.firebaseapp.com",
-            projectId: "dbpeladeiros",
-            storageBucket: "dbpeladeiros.firebasestorage.app",
-            messagingSenderId: "460398325975",
-            appId: "1:460398325975:web:b382791c2d132d1a3d0092",
-            measurementId: "G-ZKSZBZWERE"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        let jogadores = []; let timesAtuais = [];
-
-        async function loginGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-
-            try {
-                const result = await auth.signInWithPopup(provider);
-                const user = result.user;
-
-                // Verificação de Segurança: Só permite o SEU e-mail
-                if (!EMAILS_PERMITIDOS.includes(user.email.toLowerCase())) {
-                    alert("Acesso Negado: Este E-mail não tem permissão de Acesso!");
-                    await auth.signOut(); // Desloga imediatamente se não for você
-                    return;
-                }
-
-                console.log("Logado como:", user.displayName);
-            } catch (error) {
-                console.error("Erro no login:", error);
-                alert("Falha na autenticação com o Google.");
-            }
-        }
-
-        auth.onAuthStateChanged(u => {
-            if (u && EMAILS_PERMITIDOS.includes(u.email.toLowerCase())) {
-                document.getElementById('auth-container').style.display = 'none';
-                document.getElementById('app-main').style.display = 'block';
-                carregar();
-            } else {
-                document.getElementById('auth-container').style.display = 'flex';
-                document.getElementById('app-main').style.display = 'none';
-            }
-        });
-
-        function logout() { auth.signOut(); }
-
- <!DOCTYPE html>
-<html lang="pt-BR">
-
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sorteio Peladeiros</title>
-
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-
-    <style>
-        :root {
-            --primary: #2c3e50;
-            --secondary: #34495e;
-            --accent: #27ae60;
-            --danger: #e74c3c;
-            --waiting: #3498db;
-            --goleiro: #f39c12;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        body {
-            background-color: #f0f2f5;
-        }
-
-        #auth-container {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #1a1a1a;
-        }
-
-        .login-card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 350px;
-            text-align: center;
-        }
-
-        .auth-input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-
-        .btn-auth {
-            width: 100%;
-            padding: 12px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        #app-main {
-            display: none;
-            max-width: 600px;
-            margin: 20px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-            position: relative;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .btn-logout {
-            position: absolute;
-            right: 0;
-            top: 0;
-            background: none;
-            border: none;
-            color: #999;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-
-        .logo {
-            max-width: 60px;
-            border-radius: 50%;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .search-box input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-        }
-
-        .btn-add {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        h3 {
-            font-size: 0.8rem;
-            margin: 15px 0 5px;
-            text-transform: uppercase;
-            color: #7f8c8d;
-        }
-
-        .player-list {
-            list-style: none;
-        }
-
-        .player-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f9f9f9;
-        }
-
-        .player-info {
-            cursor: pointer;
-            flex: 1;
-        }
-
-        .player-info strong {
-            display: block;
-            color: var(--primary);
-        }
-
-        .player-info span {
-            font-size: 0.7rem;
-            color: #999;
-        }
-
-        .player-total {
-            font-weight: bold;
-            color: var(--accent);
-            margin-right: 10px;
-        }
-
-        .actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .btn-action {
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        .btn-whatsapp-send {
-            background: #25d366;
-            grid-column: span 2;
-        }
-
-        .btn-pdf {
-            background: var(--danger);
-        }
-
-        .btn-import {
-            background: var(--secondary);
-        }
-
-        .btn-draw {
-            background: var(--waiting);
-        }
-
-        .btn-clear {
-            background: #95a5a6;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-        }
-
-        .modal-row {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-
-        .modal-row input {
-            flex: 1;
-        }
-
-        .modal-row select {
-            width: 100px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-
-        .bg-confirmado {
-            background-color: #e8f5e9 !important;
-            /* Verde bem suave */
-            border-left: 5px solid #27ae60;
-            margin-bottom: 5px;
-            padding-left: 10px !important;
-            border-radius: 8px;
-        }
-
-        /* Fundo vermelho claro para espera */
-        .bg-espera {
-            background-color: #ffebee !important;
-            /* Vermelho bem suave */
-            border-left: 5px solid #e74c3c;
-            margin-bottom: 5px;
-            padding-left: 10px !important;
-            border-radius: 8px;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div id="auth-container">
-        <div class="login-card">
-            <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
-            <h2>Sorteio Peladeiros</h2>
-            <h4>⚽ Desde 1982 🍻🍖</h4>
-            <h6>Futebol & Resenha</h6>
-            <h3>Login</h3>
-            <p style="margin-bottom: 20px; color: #666;">Acesso Restrito</p>
-
-            <button class="btn-auth" onclick="loginGoogle()"
-                style="display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #444; border: 1px solid #ddd;">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
-                Entrar com Conta Google
-            </button>
-
-            <p id="error-login" style="color:red; font-size:0.8rem; margin-top:10px; display:none;"></p>
-        </div>
-    </div>
-
-    <div id="app-main">
-        <header>
-            <button class="btn-logout" onclick="logout()">Sair</button>
-            <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
-            <h1 style="font-size: 1.3rem; margin-bottom: 2px;">⚽ Peladeiros ⚽</h1>
-            <p id="data-topo" style="font-size: 0.85rem; color: #7f8c8d; font-weight: bold;"></p>
-        </header>
-
-        <div class="search-box">
-            <input type="text" id="inNome" placeholder="Novo jogador...">
-            <button class="btn-add" onclick="abrirNovo()">+</button>
-        </div>
-
-        <h3 id="tituloConfirmados">Confirmados (0)</h3>
-        <ul class="player-list" id="listaPagantes"></ul>
-
-        <h3 id="tituloEspera">Lista de Espera (0)</h3>
-        <ul class="player-list" id="listaEspera"></ul>
-
-        <div class="actions">
-            <button class="btn-action btn-import" onclick="importarWhatsApp()">Importar WhatsApp</button>
-            <button class="btn-action btn-draw" onclick="sortear()">Sortear Times</button>
-            <button class="btn-action btn-pdf" onclick="gerarPDF()">Relatório PDF</button>
-            <button class="btn-action btn-clear" onclick="limparTudo()">Zerar Lista</button>
-            <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">Enviar WhatsApp</button>
-        </div>
-        <div id="times"></div>
-    </div>
-
-    <div class="modal" id="modalPagamento">
-        <div class="modal-content">
-            <h2 id="modalTitulo">Pagamento</h2>
             <p id="msgAviso" style="color: var(--danger); font-size: 0.7rem; display: none;">Total mínimo R$ 15,00</p>
             <input type="hidden" id="editId">
 
-            <!-- Bloco do QR Code Dinâmico -->
-<div id="container-pix" style="text-align: center; margin: 15px 0; display: none;">
-    <p style="font-size: 0.7rem; font-weight: bold; color: var(--primary); margin-bottom: 5px;">
-        PAGAMENTO PIX: <span id="nome-qr"></span>
-    </p>
-    <div id="qrcode-area">
-        <!-- O QR Code será inserido aqui via JS -->
-    </div>
-    <p style="font-size: 0.6rem; color: #7f8c8d; margin-top: 5px;">Valor sugerido: R$ 15,00</p>
-</div>
-
             <div class="modal-row">
                 <input type="number" id="idade" class="auth-input" placeholder="Idade">
                 <select id="nivelTecnico" class="auth-input">
@@ -781,7 +355,6 @@
             <div class="modal-row">
                 <input type="number" id="val2" class="auth-input" placeholder="Valor">
                 <select id="pag2">
-                    <option value="-">-</option>
                     <option value="Pix"> ❖ PIX</option>
                     <option value="Dinheiro">💲 Dinheiro</option>
                     <option value="Crédito">💳 Crédito</option>
@@ -802,7 +375,7 @@
     </div>
 
     <script>
-        const EMAILS_PERMITIDOS = ["alexandre.gcomp@gmail.com", "jeffinho648@gmail.com"];
+        const EMAILS_PERMITIDOS = ["alexandre.gcomp@gmail.com"];
         const firebaseConfig = {
             apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
             authDomain: "dbpeladeiros.firebaseapp.com",
@@ -827,7 +400,7 @@
 
                 // Verificação de Segurança: Só permite o SEU e-mail
                 if (!EMAILS_PERMITIDOS.includes(user.email.toLowerCase())) {
-                    alert("Acesso Negado: Este E-mail não tem permissão de Acesso!");
+                    alert("Acesso Negado: Este e-mail não tem permissão de administrador.");
                     await auth.signOut(); // Desloga imediatamente se não for você
                     return;
                 }
@@ -851,436 +424,6 @@
         });
 
         function logout() { auth.signOut(); }
-
-        function gerarQrCodeDinamico(nomeJogador) {
-    const chavePix = "associacaopeladeiros.fr@gmail.com"; 
-    const nomeBeneficiario = "ALEXANDRE LUIZ GRACA";
-    const cidade = "JUIZ DE FORA";
-    const valor = "15.00";
-    
-    const hoje = new Date();
-    const dia = String(hoje.getDate()).padStart(2, '0');
-    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
-    const dataFormatada = `${dia}${mes}`;
-
-    // Descrição sem espaços ou caracteres especiais
-    const descricao = `PELADA${dataFormatada}${nomeJogador.substring(0, 8)}`.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-
-    const f = (id, conteudo) => id + conteudo.length.toString().padStart(2, '0') + conteudo;
-
-    // Montagem do Payload seguindo o padrão EMV
-    const payloadChave = f('01', chavePix);
-    const merchantAccount = f('26', '0014BR.GOV.BCB.PIX' + payloadChave);
-    const merchantCategory = '52040000';
-    const transactionCurrency = '5303986';
-    const transactionAmount = f('54', valor);
-    const countryCode = '5802BR';
-    const merchantName = f('59', nomeBeneficiario);
-    const merchantCity = f('60', cidade);
-    const infoAdicional = f('05', descricao);
-    const dataObjects = f('62', infoAdicional);
-
-    let payloadSemCRC = '000201' + merchantAccount + merchantCategory + transactionCurrency + 
-                        transactionAmount + countryCode + merchantName + merchantCity + dataObjects + '6304';
-
-    // Cálculo do CRC16 (O segredo para parar de dar erro)
-    function calcularCRC16(str) {
-        let crc = 0xFFFF;
-        for (let i = 0; i < str.length; i++) {
-            crc ^= str.charCodeAt(i) << 8;
-            for (let j = 0; j < 8; j++) {
-                if ((crc & 0x8000) !== 0) {
-                    crc = (crc << 1) ^ 0x1021;
-                } else {
-                    crc <<= 1;
-                }
-            }
-        }
-        return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
-    }
-
-    const payloadFinal = payloadSemCRC + calcularCRC16(payloadSemCRC);
-    
-    // Gerar a URL do QR Code
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(payloadFinal)}`;
-    
-    const area = document.getElementById('qrcode-area');
-    area.innerHTML = `<img src="${qrCodeUrl}" style="border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: white;">`;
-    document.getElementById('nome-qr').innerText = nomeJogador.toUpperCase();
-    document.getElementById('container-pix').style.display = 'block';
-}
-        
-        function abrirNovo() {
-            const n = document.getElementById('inNome').value.trim();
-            if (!n) return;
-            const jaExiste = jogadores.some(j => j.nome.toLowerCase().trim() === n.toLowerCase());
-            if (jaExiste) { alert("Atenção: O jogador '" + n + "' já está na lista!"); return; }
-
-            document.getElementById('editId').value = "";
-            document.getElementById('modalTitulo').innerText = n;
-            document.getElementById('val1').value = "";
-            document.getElementById('val2').value = "";
-            document.getElementById('idade').value = "";
-            document.getElementById('nivelTecnico').value = "3";
-            document.getElementById('modalPagamento').style.display = 'flex';
-            gerarQrCodeDinamico(n);
-            document.getElementById('modalPagamento').style.display = 'flex';
-            }
-
-        async function salvarPagamento() {
-            const id = document.getElementById('editId').value;
-            const n = document.getElementById('modalTitulo').innerText;
-
-            const v1 = parseFloat(document.getElementById('val1').value) || 0;
-            const p1 = document.getElementById('pag1').value;
-            const v2 = parseFloat(document.getElementById('val2').value) || 0;
-            const p2 = document.getElementById('pag2').value;
-            const idade = parseInt(document.getElementById('idade').value) || 0;
-            const nivel = parseInt(document.getElementById('nivelTecnico').value) || 3;
-
-            if ((v1 + v2) < 15) { alert("Valor mínimo de R$ 15,00 não atingido!"); return; }
-
-            const dados = {
-                nome: n,
-                v1: v1, p1: p1,
-                v2: v2, p2: p2,
-                idade: idade,
-                nivel: nivel,
-                isGoleiro: false
-            };
-
-            if (id) await db.collection("jogadores").doc(id).update(dados);
-            else await db.collection("jogadores").add(dados);
-
-            fecharModal();
-        }
-
-        async function salvarGoleiro() {
-            const id = document.getElementById('editId').value;
-            const n = document.getElementById('modalTitulo').innerText;
-            const idade = parseInt(document.getElementById('idade').value) || 0;
-            const nivel = parseInt(document.getElementById('nivelTecnico').value) || 3;
-
-            const dados = {
-                nome: n, v1: 0, p1: "Pix", v2: 0, p2: "-",
-                idade: idade, nivel: nivel, isGoleiro: true
-            };
-
-            if (id) await db.collection("jogadores").doc(id).update(dados);
-            else await db.collection("jogadores").add(dados);
-            fecharModal();
-        }
-
-        function renderizar() {
-            const lp = document.getElementById('listaPagantes');
-            const le = document.getElementById('listaEspera');
-            const hConfirmados = document.getElementById('tituloConfirmados');
-            const hEspera = document.getElementById('tituloEspera');
-
-            lp.innerHTML = ""; le.innerHTML = "";
-            let qtdC = 0; let qtdE = 0;
-
-            jogadores.forEach(j => {
-                const total = (j.v1 || 0) + (j.v2 || 0);
-                const ok = total >= 15 || j.isGoleiro;
-                const classe = ok ? 'bg-confirmado' : 'bg-espera';
-
-                let desc = j.isGoleiro ? "🧤 GOLEIRO" : `${j.p1}: R$${j.v1}`;
-                if (!j.isGoleiro && j.v2 > 0) desc += ` | ${j.p2}: R$${j.v2}`;
-                if (j.nivel) desc += ` | Nível: ${j.nivel}★`;
-
-                const html = `<li class="player-item ${classe}">
-                    <div class="player-info" onclick="abrirEdicao('${j.id}')">
-                        <strong>${j.nome} ${j.idade ? '(' + j.idade + 'a)' : ''}</strong>
-                        <span>${desc}</span>
-                    </div>
-                    <div style="display:flex; align-items:center;">
-                        <span class="player-total">${j.isGoleiro ? 'OK' : 'R$' + total}</span>
-                        <button onclick="remover('${j.id}')" style="border:none; background:none; color:red; cursor:pointer; padding: 10px;">✕</button>
-                    </div>
-                </li>`;
-
-                if (ok) { lp.innerHTML += html; qtdC++; }
-                else { le.innerHTML += html; qtdE++; }
-            });
-
-            hConfirmados.innerText = `Confirmados (${qtdC})`;
-            hEspera.innerText = `Lista de Espera (${qtdE})`;
-        }
-
-        function abrirEdicao(id) {
-            const j = jogadores.find(x => x.id === id);
-            document.getElementById('editId').value = id;
-            document.getElementById('modalTitulo').innerText = j.nome;
-            document.getElementById('val1').value = j.v1 || "";
-            document.getElementById('val2').value = j.v2 || "";
-            document.getElementById('idade').value = j.idade || "";
-            document.getElementById('nivelTecnico').value = j.nivel || 3;
-            document.getElementById('modalPagamento').style.display = 'flex';
-            gerarQrCodeDinamico(j.nome);
-            document.getElementById('modalPagamento').style.display = 'flex';
-        }
-
-        function fecharModal() {
-            document.getElementById('modalPagamento').style.display = 'none';
-            document.getElementById('inNome').value = "";
-        }
-
-        async function remover(id) { if (confirm("Remover?")) await db.collection("jogadores").doc(id).delete(); }
-
-        async function limparTudo() {
-            if (confirm("Zerar lista?")) {
-                const snap = await db.collection("jogadores").get();
-                const b = db.batch(); snap.forEach(d => b.delete(d.ref)); await b.commit();
-                document.getElementById('times').innerHTML = "";
-            }
-        }
-
-       function gerarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const dataF = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
-
-            doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
-
-            // Filtra apenas jogadores confirmados ou goleiros
-            const confirmados = jogadores.filter(j => ((parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)) >= 15 || j.isGoleiro);
-
-            let tPix = 0, tDin = 0, tCre = 0;
-
-            const rows = confirmados.map(j => {
-                // GARANTIA: Converte para número puro, removendo qualquer caractere estranho
-                const v1 = Number(String(j.v1).replace(/[^0-9.-]+/g, "")) || 0;
-                const v2 = Number(String(j.v2).replace(/[^0-9.-]+/g, "")) || 0;
-                const total = v1 + v2;
-
-                const temCredito = (j.p1 === "Crédito" || j.p2 === "Crédito");
-
-                // Soma matemática real para o resumo
-                // Localize este trecho dentro da função gerarPDF
-                [{ v: v1, p: j.p1 }, { v: v2, p: j.p2 }].forEach(pg => {
-                    // Convertemos a categoria para minúsculo para evitar erro de digitação
-                    const categoria = String(pg.p).toLowerCase().trim();
-
-                    if (categoria.includes("pix")) {
-                        tPix += pg.v;
-                    } else if (categoria.includes("dinheiro")) {
-                        tDin += pg.v;
-                    } else if (categoria.includes("crédito") || categoria.includes("credito")) {
-                        tCre += pg.v;
-                    }
-                });
-
-                return [
-                    j.nome,
-                    j.isGoleiro ? "ISENTO" : `${j.p1}: R$ ${v1.toFixed(2)}`,
-                    (!j.isGoleiro && v2 > 0) ? `${j.p2}: R$ ${v2.toFixed(2)}` : "-",
-                    `R$ ${total.toFixed(2)}`,
-                    temCredito
-                ];
-            });
-
-            // Tabela de Jogadores
-            doc.autoTable({
-                startY: 25,
-                head: [['Nome', 'Pagamento 1', 'Pagamento 2', 'Total']],
-                body: rows.map(r => r.slice(0, 4)),
-                styles: { font: "helvetica", fontSize: 10 },
-                didParseCell: function (data) {
-                    if (data.section === 'body' && rows[data.row.index][4] === true) {
-                        data.cell.styles.textColor = [231, 76, 60]; // Vermelho para Crédito
-                    }
-                }
-            });
-
-            // Tabela de Resumo (Agora com valores somados corretamente)
-            doc.autoTable({
-                startY: doc.lastAutoTable.finalY + 10,
-                head: [['Resumo Financeiro', 'Valor Total']],
-                body: [
-                    ['PIX', `R$ ${tPix.toFixed(2)}`],
-                    ['DINHEIRO', `R$ ${tDin.toFixed(2)}`],
-                    ['CRÉDITO', `R$ ${tCre.toFixed(2)}`],
-                    ['TOTAL GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]
-                ],
-                headStyles: { fillColor: [46, 204, 113] }
-            });
-
-            doc.save(`Financeiro_${dataF}.pdf`);
-        }
-
-    function sortear() {
-                const ativos = jogadores.filter(j => (j.v1 + j.v2) >= 15 || j.isGoleiro);
-                const totalJogadores = ativos.length;
-
-                if (totalJogadores < 7) {
-                    return alert("Mínimo de 7 jogadores para realizar o sorteio.");
-                }
-
-                // 1. Define a quantidade de times principais
-                let qtdTimes = Math.floor(totalJogadores / 8);
-                if (qtdTimes === 0) qtdTimes = 1;
-
-                // Sorteio aleatório de goleiros
-                const goleiros = ativos.filter(j => j.isGoleiro).sort(() => Math.random() - 0.5);
-
-                // CRITÉRIO DE HABILIDADE: Ordena do mais habilidoso para o menos habilidoso
-                const linha = ativos.filter(j => !j.isGoleiro).sort((a, b) => {
-                    if (b.habilidade !== a.habilidade) return b.habilidade - a.habilidade;
-                    return a.idade - b.idade; // Idade como critério de desempate
-                });
-
-                const configCores = [
-                    { nome: "Verde", hex: "#27ae60" },
-                    { nome: "Amarelo", hex: "#f1c40f" },
-                    { nome: "Vermelho", hex: "#e74c3c" },
-                    { nome: "Roxo", hex: "#9b59b6" }
-                ];
-
-                timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
-                    nome: configCores[i]?.nome || `Time ${i + 1}`,
-                    cor: configCores[i]?.hex || "#2c3e50",
-                    membros: [],
-                    somaHabilidade: 0
-                }));
-
-                const timeLaranja = { nome: "Laranja", cor: "#e67e22", membros: [] };
-
-                // 2. Distribuir Goleiros
-                goleiros.forEach((g, i) => {
-                    if (i < qtdTimes) {
-                        timesAtuais[i].membros.push('🧤 ' + g.nome);
-                    } else {
-                        timeLaranja.membros.push('🧤 ' + g.nome);
-                    }
-                });
-
-                // 3. Distribuir Linha equilibrando a Habilidade
-                // Usamos a lógica de "quem tem menos habilidade acumulada recebe o próximo melhor jogador"
-                linha.forEach(j => {
-                    // Filtra apenas times que ainda não atingiram o limite de 9
-                    const timesDisponiveis = timesAtuais.filter(t => t.membros.length < 9);
-
-                    if (timesDisponiveis.length > 0) {
-                        // Ordena os times para dar o jogador ao time que está "mais fraco" no momento
-                        timesDisponiveis.sort((a, b) => a.somaHabilidade - b.somaHabilidade);
-
-                        timesDisponiveis[0].membros.push(j.nome);
-                        timesDisponiveis[0].somaHabilidade += (parseInt(j.habilidade) || 3);
-                    } else {
-                        // Se todos os times principais estiverem com 9, vai para o Laranja
-                        timeLaranja.membros.push(j.nome);
-                    }
-                });
-
-                if (timeLaranja.membros.length > 0) timesAtuais.push(timeLaranja);
-
-                // 4. Renderizar
-                const box = document.getElementById('times');
-                box.innerHTML = "<h3>Divisão Equilibrada</h3>";
-                timesAtuais.forEach(t => {
-                    box.innerHTML += `
-            <div style="padding:15px; margin:10px 0; border-radius:8px; background:#fff; border:1px solid #ddd; border-left:10px solid ${t.cor}; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <strong style="color:${t.cor}; font-size: 1.1rem;">${t.nome.toUpperCase()}</strong>
-                    <span style="font-size:0.75rem; background:#eee; padding:3px 10px; border-radius:12px; font-weight: bold;">${t.membros.length} ATLETAS</span>
-                </div>
-                <div style="font-size:0.95rem; line-height:1.7; color:#2c3e50; font-weight: 500;">
-                    ${t.membros.join('<br>')}
-                </div>
-            </div>`;
-                });
-            }
-        function renderizarTimes() {
-            const div = document.getElementById('times');
-            div.innerHTML = "<h2 style='margin-top:20px; text-align:center;'>Equipes Sorteadas</h2>";
-
-            timesAtuais.forEach(t => {
-                let card = `
-            <div style="background:${t.corFundo}; padding:15px; border-radius:12px; margin:15px 0; border-left:8px solid ${t.corBorda}; box-shadow: 0 2px 5px rgba(0,0,0,0.05)">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.1); padding-bottom:5px;">
-                    <strong style="font-size:1.1rem; color:#333;">TIME ${t.nome.toUpperCase()}</strong>
-                    <span style="background:white; padding:2px 8px; border-radius:10px; font-size:0.8rem; font-weight:bold;">
-                        ${t.membros.length} Jogadores
-                    </span>
-                </div>
-                <ul style="margin-top:10px; list-style:none; font-size:0.95rem;">
-                    ${t.membros.map(m => `<li style="padding:3px 0;">• ${m}</li>`).join('')}
-                </ul>
-                <div style="margin-top:8px; font-size:0.7rem; color:#666; text-align:right;">
-                    Força Técnica: ${t.somaNivel} pts
-                </div>
-            </div>`;
-                div.innerHTML += card;
-            });
-        }
-
-        function enviarWhatsApp() {
-            if (timesAtuais.length === 0) return alert("Sorteie primeiro!");
-            let msg = `*⚽ SORTEIO PELADEIROS ⚽*\n\n`;
-            timesAtuais.forEach(t => {
-                msg += `*${t.nome.toUpperCase()}*\n${t.membros.map(m => '• ' + m).join('\n')}\n\n`;
-            });
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
-        }
-
-       async function importarWhatsApp() {
-            const txt = prompt("Cole a lista do WhatsApp:");
-            if (!txt) return;
-
-            const linhas = txt.split('\n');
-            const batch = db.batch();
-
-            // 1. Criamos um Set com os nomes que já estão no sistema (para busca rápida)
-            // Usamos toLowerCase() para garantir que "Jefinho" e "jefinho" sejam vistos como iguais
-            const nomesExistentes = new Set(jogadores.map(j => j.nome.toLowerCase().trim()));
-
-            // 2. Criamos um Set para controlar o que estamos tentando inserir NESTA importação
-            // Isso evita que nomes repetidos dentro do próprio texto colado entrem (ex: os vários "Pernambuco")
-            const nomesNestaImportacao = new Set();
-
-            // Pulamos a primeira linha (título) e processamos o resto
-            linhas.slice(1).forEach(l => {
-                // Limpa números e espaços (ex: "25 Lucas" vira "Lucas")
-                let n = l.replace(/^[\d\.\s*-]+/, '').trim();
-                let nLower = n.toLowerCase();
-
-                // Filtros de validação
-                const palavrasChaveTitulo = ["churrasco", "lista", "pelada", "dia", "horário", "confirmados"];
-                const ehTitulo = palavrasChaveTitulo.some(p => nLower.includes(p));
-
-                if (n.length > 2 && !ehTitulo) {
-                    // SÓ ADICIONA SE:
-                    // - Não estiver no banco de dados (nomesExistentes)
-                    // - Não tiver sido processado nesta rodada (nomesNestaImportacao)
-                    if (!nomesExistentes.has(nLower) && !nomesNestaImportacao.has(nLower)) {
-                        const novoRef = db.collection("jogadores").doc();
-                        batch.set(novoRef, {
-                            nome: n,
-                            v1: 0,
-                            p1: "❖ PIX",
-                            v2: 0,
-                            p2: "-",
-                            isGoleiro: false
-                        });
-
-                        // Adicionamos ao controle temporário para não repetir no próximo loop
-                        nomesNestaImportacao.add(nLower);
-                    }
-                }
-            });
-
-            try {
-                await batch.commit();
-                alert(`Importação concluída! ${nomesNestaImportacao.size} novos jogadores adicionados.`);
-            } catch (e) {
-                console.error("Erro na importação: ", e);
-                alert("Erro ao salvar no banco de dados.");
-            }
-        }    </script>
-</body>
-
-</html>
 
         function carregar() {
             const elementoData = document.getElementById('data-topo');
@@ -1309,9 +452,7 @@
             document.getElementById('idade').value = "";
             document.getElementById('nivelTecnico').value = "3";
             document.getElementById('modalPagamento').style.display = 'flex';
-            gerarQrCodeDinamico(n);
-            document.getElementById('modalPagamento').style.display = 'flex';
-            }
+        }
 
         async function salvarPagamento() {
             const id = document.getElementById('editId').value;
@@ -1403,8 +544,6 @@
             document.getElementById('idade').value = j.idade || "";
             document.getElementById('nivelTecnico').value = j.nivel || 3;
             document.getElementById('modalPagamento').style.display = 'flex';
-            gerarQrCodeDinamico(j.nome);
-            document.getElementById('modalPagamento').style.display = 'flex';
         }
 
         function fecharModal() {
@@ -1422,150 +561,116 @@
             }
         }
 
-       function gerarPDF() {
+        function gerarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const dataF = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
 
             doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
 
-            // Filtra apenas jogadores confirmados ou goleiros
             const confirmados = jogadores.filter(j => ((parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)) >= 15 || j.isGoleiro);
-
             let tPix = 0, tDin = 0, tCre = 0;
 
             const rows = confirmados.map(j => {
-                // GARANTIA: Converte para número puro, removendo qualquer caractere estranho
                 const v1 = Number(String(j.v1).replace(/[^0-9.-]+/g, "")) || 0;
                 const v2 = Number(String(j.v2).replace(/[^0-9.-]+/g, "")) || 0;
-                const total = v1 + v2;
 
-                const temCredito = (j.p1 === "Crédito" || j.p2 === "Crédito");
-
-                // Soma matemática real para o resumo
-                // Localize este trecho dentro da função gerarPDF
                 [{ v: v1, p: j.p1 }, { v: v2, p: j.p2 }].forEach(pg => {
-                    // Convertemos a categoria para minúsculo para evitar erro de digitação
-                    const categoria = String(pg.p).toLowerCase().trim();
-
-                    if (categoria.includes("pix")) {
-                        tPix += pg.v;
-                    } else if (categoria.includes("dinheiro")) {
-                        tDin += pg.v;
-                    } else if (categoria.includes("crédito") || categoria.includes("credito")) {
-                        tCre += pg.v;
-                    }
+                    const cat = String(pg.p).toLowerCase();
+                    if (cat.includes("pix")) tPix += pg.v;
+                    else if (cat.includes("dinheiro")) tDin += pg.v;
+                    else if (cat.includes("crédito") || cat.includes("credito")) tCre += pg.v;
                 });
 
-                return [
-                    j.nome,
-                    j.isGoleiro ? "ISENTO" : `${j.p1}: R$ ${v1.toFixed(2)}`,
-                    (!j.isGoleiro && v2 > 0) ? `${j.p2}: R$ ${v2.toFixed(2)}` : "-",
-                    `R$ ${total.toFixed(2)}`,
-                    temCredito
-                ];
+                return [j.nome, j.isGoleiro ? "ISENTO" : `R$ ${v1.toFixed(2)}`, v2 > 0 ? `R$ ${v2.toFixed(2)}` : "-", `R$ ${(v1 + v2).toFixed(2)}`];
             });
 
-            // Tabela de Jogadores
             doc.autoTable({
                 startY: 25,
-                head: [['Nome', 'Pagamento 1', 'Pagamento 2', 'Total']],
-                body: rows.map(r => r.slice(0, 4)),
-                styles: { font: "helvetica", fontSize: 10 },
-                didParseCell: function (data) {
-                    if (data.section === 'body' && rows[data.row.index][4] === true) {
-                        data.cell.styles.textColor = [231, 76, 60]; // Vermelho para Crédito
-                    }
-                }
+                head: [['Nome', 'Vlr 1', 'Vlr 2', 'Total']],
+                body: rows
             });
 
-            // Tabela de Resumo (Agora com valores somados corretamente)
             doc.autoTable({
                 startY: doc.lastAutoTable.finalY + 10,
-                head: [['Resumo Financeiro', 'Valor Total']],
-                body: [
-                    ['PIX', `R$ ${tPix.toFixed(2)}`],
-                    ['DINHEIRO', `R$ ${tDin.toFixed(2)}`],
-                    ['CRÉDITO', `R$ ${tCre.toFixed(2)}`],
-                    ['TOTAL GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]
-                ],
-                headStyles: { fillColor: [46, 204, 113] }
+                head: [['Resumo', 'Total']],
+                body: [['Pix', `R$ ${tPix.toFixed(2)}`], ['Dinheiro', `R$ ${tDin.toFixed(2)}`], ['Crédito', `R$ ${tCre.toFixed(2)}`], ['GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]]
             });
 
             doc.save(`Financeiro_${dataF}.pdf`);
         }
 
-    function sortear() {
-                const ativos = jogadores.filter(j => (j.v1 + j.v2) >= 15 || j.isGoleiro);
-                const totalJogadores = ativos.length;
+        function sortear() {
+            const ativos = jogadores.filter(j => (j.v1 + j.v2) >= 15 || j.isGoleiro);
+            const totalJogadores = ativos.length;
 
-                if (totalJogadores < 7) {
-                    return alert("Mínimo de 7 jogadores para realizar o sorteio.");
+            if (totalJogadores < 7) {
+                return alert("Mínimo de 7 jogadores para realizar o sorteio.");
+            }
+
+            // 1. Define a quantidade de times principais
+            let qtdTimes = Math.floor(totalJogadores / 8);
+            if (qtdTimes === 0) qtdTimes = 1;
+
+            // Sorteio aleatório de goleiros
+            const goleiros = ativos.filter(j => j.isGoleiro).sort(() => Math.random() - 0.5);
+
+            // CRITÉRIO DE HABILIDADE: Ordena do mais habilidoso para o menos habilidoso
+            const linha = ativos.filter(j => !j.isGoleiro).sort((a, b) => {
+                if (b.habilidade !== a.habilidade) return b.habilidade - a.habilidade;
+                return a.idade - b.idade; // Idade como critério de desempate
+            });
+
+            const configCores = [
+                { nome: "Verde", hex: "#27ae60" },
+                { nome: "Amarelo", hex: "#f1c40f" },
+                { nome: "Vermelho", hex: "#e74c3c" },
+                { nome: "Roxo", hex: "#9b59b6" }
+            ];
+
+            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
+                nome: configCores[i]?.nome || `Time ${i + 1}`,
+                cor: configCores[i]?.hex || "#2c3e50",
+                membros: [],
+                somaHabilidade: 0
+            }));
+
+            const timeLaranja = { nome: "Laranja", cor: "#e67e22", membros: [] };
+
+            // 2. Distribuir Goleiros
+            goleiros.forEach((g, i) => {
+                if (i < qtdTimes) {
+                    timesAtuais[i].membros.push('🧤 ' + g.nome);
+                } else {
+                    timeLaranja.membros.push('🧤 ' + g.nome);
                 }
+            });
 
-                // 1. Define a quantidade de times principais
-                let qtdTimes = Math.floor(totalJogadores / 8);
-                if (qtdTimes === 0) qtdTimes = 1;
+            // 3. Distribuir Linha equilibrando a Habilidade
+            // Usamos a lógica de "quem tem menos habilidade acumulada recebe o próximo melhor jogador"
+            linha.forEach(j => {
+                // Filtra apenas times que ainda não atingiram o limite de 9
+                const timesDisponiveis = timesAtuais.filter(t => t.membros.length < 9);
 
-                // Sorteio aleatório de goleiros
-                const goleiros = ativos.filter(j => j.isGoleiro).sort(() => Math.random() - 0.5);
+                if (timesDisponiveis.length > 0) {
+                    // Ordena os times para dar o jogador ao time que está "mais fraco" no momento
+                    timesDisponiveis.sort((a, b) => a.somaHabilidade - b.somaHabilidade);
 
-                // CRITÉRIO DE HABILIDADE: Ordena do mais habilidoso para o menos habilidoso
-                const linha = ativos.filter(j => !j.isGoleiro).sort((a, b) => {
-                    if (b.habilidade !== a.habilidade) return b.habilidade - a.habilidade;
-                    return a.idade - b.idade; // Idade como critério de desempate
-                });
+                    timesDisponiveis[0].membros.push(j.nome);
+                    timesDisponiveis[0].somaHabilidade += (parseInt(j.habilidade) || 3);
+                } else {
+                    // Se todos os times principais estiverem com 9, vai para o Laranja
+                    timeLaranja.membros.push(j.nome);
+                }
+            });
 
-                const configCores = [
-                    { nome: "Verde", hex: "#27ae60" },
-                    { nome: "Amarelo", hex: "#f1c40f" },
-                    { nome: "Vermelho", hex: "#e74c3c" },
-                    { nome: "Roxo", hex: "#9b59b6" }
-                ];
+            if (timeLaranja.membros.length > 0) timesAtuais.push(timeLaranja);
 
-                timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
-                    nome: configCores[i]?.nome || `Time ${i + 1}`,
-                    cor: configCores[i]?.hex || "#2c3e50",
-                    membros: [],
-                    somaHabilidade: 0
-                }));
-
-                const timeLaranja = { nome: "Laranja", cor: "#e67e22", membros: [] };
-
-                // 2. Distribuir Goleiros
-                goleiros.forEach((g, i) => {
-                    if (i < qtdTimes) {
-                        timesAtuais[i].membros.push('🧤 ' + g.nome);
-                    } else {
-                        timeLaranja.membros.push('🧤 ' + g.nome);
-                    }
-                });
-
-                // 3. Distribuir Linha equilibrando a Habilidade
-                // Usamos a lógica de "quem tem menos habilidade acumulada recebe o próximo melhor jogador"
-                linha.forEach(j => {
-                    // Filtra apenas times que ainda não atingiram o limite de 9
-                    const timesDisponiveis = timesAtuais.filter(t => t.membros.length < 9);
-
-                    if (timesDisponiveis.length > 0) {
-                        // Ordena os times para dar o jogador ao time que está "mais fraco" no momento
-                        timesDisponiveis.sort((a, b) => a.somaHabilidade - b.somaHabilidade);
-
-                        timesDisponiveis[0].membros.push(j.nome);
-                        timesDisponiveis[0].somaHabilidade += (parseInt(j.habilidade) || 3);
-                    } else {
-                        // Se todos os times principais estiverem com 9, vai para o Laranja
-                        timeLaranja.membros.push(j.nome);
-                    }
-                });
-
-                if (timeLaranja.membros.length > 0) timesAtuais.push(timeLaranja);
-
-                // 4. Renderizar
-                const box = document.getElementById('times');
-                box.innerHTML = "<h3>Divisão Equilibrada</h3>";
-                timesAtuais.forEach(t => {
-                    box.innerHTML += `
+            // 4. Renderizar
+            const box = document.getElementById('times');
+            box.innerHTML = "<h3>Divisão Equilibrada</h3>";
+            timesAtuais.forEach(t => {
+                box.innerHTML += `
             <div style="padding:15px; margin:10px 0; border-radius:8px; background:#fff; border:1px solid #ddd; border-left:10px solid ${t.cor}; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <strong style="color:${t.cor}; font-size: 1.1rem;">${t.nome.toUpperCase()}</strong>
@@ -1575,8 +680,9 @@
                     ${t.membros.join('<br>')}
                 </div>
             </div>`;
-                });
-            }
+            });
+        }
+
         function renderizarTimes() {
             const div = document.getElementById('times');
             div.innerHTML = "<h2 style='margin-top:20px; text-align:center;'>Equipes Sorteadas</h2>";
@@ -1610,60 +716,24 @@
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
 
-       async function importarWhatsApp() {
-            const txt = prompt("Cole a lista do WhatsApp:");
+        async function importarWhatsApp() {
+            const txt = prompt("Cole a lista:");
             if (!txt) return;
-
             const linhas = txt.split('\n');
             const batch = db.batch();
+            const existentes = new Set(jogadores.map(j => j.nome.toLowerCase().trim()));
 
-            // 1. Criamos um Set com os nomes que já estão no sistema (para busca rápida)
-            // Usamos toLowerCase() para garantir que "Jefinho" e "jefinho" sejam vistos como iguais
-            const nomesExistentes = new Set(jogadores.map(j => j.nome.toLowerCase().trim()));
-
-            // 2. Criamos um Set para controlar o que estamos tentando inserir NESTA importação
-            // Isso evita que nomes repetidos dentro do próprio texto colado entrem (ex: os vários "Pernambuco")
-            const nomesNestaImportacao = new Set();
-
-            // Pulamos a primeira linha (título) e processamos o resto
-            linhas.slice(1).forEach(l => {
-                // Limpa números e espaços (ex: "25 Lucas" vira "Lucas")
+            linhas.forEach(l => {
                 let n = l.replace(/^[\d\.\s*-]+/, '').trim();
-                let nLower = n.toLowerCase();
-
-                // Filtros de validação
-                const palavrasChaveTitulo = ["churrasco", "lista", "pelada", "dia", "horário", "confirmados"];
-                const ehTitulo = palavrasChaveTitulo.some(p => nLower.includes(p));
-
-                if (n.length > 2 && !ehTitulo) {
-                    // SÓ ADICIONA SE:
-                    // - Não estiver no banco de dados (nomesExistentes)
-                    // - Não tiver sido processado nesta rodada (nomesNestaImportacao)
-                    if (!nomesExistentes.has(nLower) && !nomesNestaImportacao.has(nLower)) {
-                        const novoRef = db.collection("jogadores").doc();
-                        batch.set(novoRef, {
-                            nome: n,
-                            v1: 0,
-                            p1: "❖ PIX",
-                            v2: 0,
-                            p2: "-",
-                            isGoleiro: false
-                        });
-
-                        // Adicionamos ao controle temporário para não repetir no próximo loop
-                        nomesNestaImportacao.add(nLower);
-                    }
+                if (n.length > 2 && !existentes.has(n.toLowerCase())) {
+                    const ref = db.collection("jogadores").doc();
+                    batch.set(ref, { nome: n, v1: 0, p1: "Pix", v2: 0, p2: "-", idade: 0, nivel: 3, isGoleiro: false });
+                    existentes.add(n.toLowerCase());
                 }
             });
-
-            try {
-                await batch.commit();
-                alert(`Importação concluída! ${nomesNestaImportacao.size} novos jogadores adicionados.`);
-            } catch (e) {
-                console.error("Erro na importação: ", e);
-                alert("Erro ao salvar no banco de dados.");
-            }
-        }    </script>
+            await batch.commit();
+        }
+    </script>
 </body>
 
 </html>
