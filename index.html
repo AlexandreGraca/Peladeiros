@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Peladeiros Pro - Full Cloud</title>
+    <title>Sorteio Peladeiros</title>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
@@ -276,7 +276,7 @@
             <button class="btn-auth" onclick="loginGoogle()"
                 style="display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #444; border: 1px solid #ddd;">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
-                Entrar com Google
+                Entrar com Conta Google
             </button>
 
             <p id="error-login" style="color:red; font-size:0.8rem; margin-top:10px; display:none;"></p>
@@ -389,7 +389,7 @@
 
                 // Verificação de Segurança: Só permite o SEU e-mail
                 if (!EMAILS_PERMITIDOS.includes(user.email.toLowerCase())) {
-                    alert("Acesso Negado: Este e-mail não tem permissão de administrador.");
+                    alert("Acesso Negado: Este E-mail não tem permissão de Acesso!");
                     await auth.signOut(); // Desloga imediatamente se não for você
                     return;
                 }
