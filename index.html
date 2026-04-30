@@ -623,73 +623,77 @@
             doc.save(`Financeiro_${dataF}.pdf`);
         }
 
-        function sortear() {
-    const ativos = jogadores.filter(j => (j.v1 + j.v2) >= 15 || j.isGoleiro);
-    const totalJogadores = ativos.length;
+    function sortear() {
+                const ativos = jogadores.filter(j => (j.v1 + j.v2) >= 15 || j.isGoleiro);
+                const totalJogadores = ativos.length;
 
-    if (totalJogadores < 7) {
-        return alert("Mínimo de 7 jogadores para realizar o sorteio.");
-    }
+                if (totalJogadores < 7) {
+                    return alert("Mínimo de 7 jogadores para realizar o sorteio.");
+                }
 
-    // 1. Define a quantidade de times principais
-    let qtdTimes = Math.floor(totalJogadores / 8); 
-    if (qtdTimes === 0) qtdTimes = 1;
+                // 1. Define a quantidade de times principais
+                let qtdTimes = Math.floor(totalJogadores / 8);
+                if (qtdTimes === 0) qtdTimes = 1;
 
-    const goleiros = ativos.filter(j => j.isGoleiro).sort(() => Math.random() - 0.5);
-    const linha = ativos.filter(j => !j.isGoleiro).sort((a, b) => {
-        if (b.habilidade !== a.habilidade) return b.habilidade - a.habilidade;
-        return a.idade - b.idade;
-    });
+                // Sorteio aleatório de goleiros
+                const goleiros = ativos.filter(j => j.isGoleiro).sort(() => Math.random() - 0.5);
 
-    // 2. Mapeamento de Cores para Estilo
-    const configCores = [
-        { nome: "Verde", hex: "#27ae60" },
-        { nome: "Amarelo", hex: "#f1c40f" },
-        { nome: "Vermelho", hex: "#e74c3c" },
-        { nome: "Azul", hex: "#3498db" },
-        { nome: "Branco", hex: "#bdc3c7" },
-        { nome: "Roxo", hex: "#9b59b6" }
-    ];
+                // CRITÉRIO DE HABILIDADE: Ordena do mais habilidoso para o menos habilidoso
+                const linha = ativos.filter(j => !j.isGoleiro).sort((a, b) => {
+                    if (b.habilidade !== a.habilidade) return b.habilidade - a.habilidade;
+                    return a.idade - b.idade; // Idade como critério de desempate
+                });
 
-    timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
-        nome: configCores[i]?.nome || `Time ${i + 1}`,
-        cor: configCores[i]?.hex || "#2c3e50",
-        membros: [],
-        somaHabilidade: 0
-    }));
+                const configCores = [
+                    { nome: "Verde", hex: "#27ae60" },
+                    { nome: "Amarelo", hex: "#f1c40f" },
+                    { nome: "Vermelho", hex: "#e74c3c" },
+                    { nome: "Roxo", hex: "#9b59b6" }
+                ];
 
-    const timeLaranja = { nome: "Laranja", cor: "#e67e22", membros: [], somaHabilidade: 0 };
+                timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
+                    nome: configCores[i]?.nome || `Time ${i + 1}`,
+                    cor: configCores[i]?.hex || "#2c3e50",
+                    membros: [],
+                    somaHabilidade: 0
+                }));
 
-    // 3. Distribuir Goleiros
-    goleiros.forEach((g, i) => {
-        if (i < qtdTimes) {
-            timesAtuais[i].membros.push('🧤 ' + g.nome);
-        } else {
-            timeLaranja.membros.push('🧤 ' + g.nome);
-        }
-    });
+                const timeLaranja = { nome: "Laranja", cor: "#e67e22", membros: [] };
 
-    // 4. Distribuir Linha (Apenas o nome)
-    linha.forEach(j => {
-        const timesComVaga = timesAtuais.filter(t => t.membros.length < 9);
-        
-        if (timesComVaga.length > 0) {
-            timesComVaga.sort((a, b) => a.somaHabilidade - b.somaHabilidade);
-            // Inserindo apenas o nome
-            timesComVaga[0].membros.push(j.nome);
-            timesComVaga[0].somaHabilidade += (j.habilidade || 3);
-        } else {
-            timeLaranja.membros.push(j.nome);
-        }
-    });
+                // 2. Distribuir Goleiros
+                goleiros.forEach((g, i) => {
+                    if (i < qtdTimes) {
+                        timesAtuais[i].membros.push('🧤 ' + g.nome);
+                    } else {
+                        timeLaranja.membros.push('🧤 ' + g.nome);
+                    }
+                });
 
-    if (timeLaranja.membros.length > 0) timesAtuais.push(timeLaranja);
+                // 3. Distribuir Linha equilibrando a Habilidade
+                // Usamos a lógica de "quem tem menos habilidade acumulada recebe o próximo melhor jogador"
+                linha.forEach(j => {
+                    // Filtra apenas times que ainda não atingiram o limite de 9
+                    const timesDisponiveis = timesAtuais.filter(t => t.membros.length < 9);
 
-    // 5. Renderizar com Cores nos Cards
-    const box = document.getElementById('times'); 
-    box.innerHTML = "<h3>Divisão de Times</h3>";
-    timesAtuais.forEach(t => {
-        box.innerHTML += `
+                    if (timesDisponiveis.length > 0) {
+                        // Ordena os times para dar o jogador ao time que está "mais fraco" no momento
+                        timesDisponiveis.sort((a, b) => a.somaHabilidade - b.somaHabilidade);
+
+                        timesDisponiveis[0].membros.push(j.nome);
+                        timesDisponiveis[0].somaHabilidade += (parseInt(j.habilidade) || 3);
+                    } else {
+                        // Se todos os times principais estiverem com 9, vai para o Laranja
+                        timeLaranja.membros.push(j.nome);
+                    }
+                });
+
+                if (timeLaranja.membros.length > 0) timesAtuais.push(timeLaranja);
+
+                // 4. Renderizar
+                const box = document.getElementById('times');
+                box.innerHTML = "<h3>Divisão Equilibrada</h3>";
+                timesAtuais.forEach(t => {
+                    box.innerHTML += `
             <div style="padding:15px; margin:10px 0; border-radius:8px; background:#fff; border:1px solid #ddd; border-left:10px solid ${t.cor}; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <strong style="color:${t.cor}; font-size: 1.1rem;">${t.nome.toUpperCase()}</strong>
@@ -699,8 +703,8 @@
                     ${t.membros.join('<br>')}
                 </div>
             </div>`;
-    });
-}
+                });
+            }
         function renderizarTimes() {
             const div = document.getElementById('times');
             div.innerHTML = "<h2 style='margin-top:20px; text-align:center;'>Equipes Sorteadas</h2>";
