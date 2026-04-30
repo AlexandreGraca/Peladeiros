@@ -426,28 +426,43 @@
         function logout() { auth.signOut(); }
 
         function gerarQrCodeDinamico(nomeJogador) {
-    const chavePix = "associacaopeladeiros.fr@gmail.com"; // Pode ser CPF, E-mail ou Telefone
+    const chavePix = "associacaopeladeiros.fr@gmail.com"; 
     const nomeBeneficiario = "Alexandre Luiz Graca";
     const cidade = "JUIZ DE FORA";
     const valor = "15.00";
+    
     const hoje = new Date();
     const dia = String(hoje.getDate()).padStart(2, '0');
     const mes = String(hoje.getMonth() + 1).padStart(2, '0');
     const dataFormatada = `${dia}${mes}`;
 
-    // Nova descrição incluindo Data e Nome (limitado para caber no campo)
-    const descricao = `PELADA-${dataFormatada}-${nomeJogador.substring(0, 8)}`.toUpperCase();
+    // Descrição limpa (sem caracteres especiais para evitar erro no banco)
+    const descricao = `PELADA${dataFormatada}${nomeJogador.substring(0, 8)}`.replace(/\s/g, '').toUpperCase();
 
-    // Montagem do payload simplificada para QR Code (Formato BRCode)
-    // Para um Pix 100% funcional "Copia e Cola", o ideal é usar uma biblioteca, 
-    // mas para o QR Code de scanner simples, podemos usar a URL da API:
-    
-    const textoPix = `00020126360014BR.GOV.BCB.PIX0114${chavePix}5204000053039865405${valor}5802BR59${nomeBeneficiario.length.toString().padStart(2, '0')}${nomeBeneficiario}6012${cidade}62150511${descricao}`;
-    
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(textoPix)}`;
+    // Função auxiliar para formatar cada bloco do Pix (ID + Tamanho + Conteúdo)
+    const f = (id, conteudo) => id + conteudo.length.toString().padStart(2, '0') + conteudo;
+
+    // Montagem dos Blocos (Padrão BRCode)
+    const payloadChave = f('01', chavePix);
+    const merchantAccount = f('26', '0014BR.GOV.BCB.PIX' + payloadChave);
+    const merchantCategory = '52040000';
+    const transactionCurrency = '5303986';
+    const transactionAmount = f('54', valor);
+    const countryCode = '5802BR';
+    const merchantName = f('59', nomeBeneficiario);
+    const merchantCity = f('60', cidade);
+    const infoAdicional = f('05', descricao);
+    const dataObjects = f('62', infoAdicional);
+
+    // Payload Final sem o CRC16 (o código final 6304 que os bancos aceitam como Pix Estático simples)
+    let payloadCompleto = '000201' + merchantAccount + merchantCategory + transactionCurrency + 
+                          transactionAmount + countryCode + merchantName + merchantCity + dataObjects + '6304';
+
+    // Gerar a URL do QR Code
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(payloadCompleto)}`;
     
     const area = document.getElementById('qrcode-area');
-    area.innerHTML = `<img src="${qrCodeUrl}" style="border: 1px solid #ddd; border-radius: 8px; padding: 5px;">`;
+    area.innerHTML = `<img src="${qrCodeUrl}" style="border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: white;">`;
     document.getElementById('nome-qr').innerText = nomeJogador.toUpperCase();
     document.getElementById('container-pix').style.display = 'block';
 }
