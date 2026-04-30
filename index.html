@@ -756,13 +756,7 @@
             let msg = `SORTEIO PELADEIROS\n📅 ${dataFormatada}\n\n`;
 
             timesAtuais.forEach(t => {
-                msg += `${t.membros.map(m => {
-                    if (m.toLowerCase().includes("goleiro")) {
-                        return '🧤 ' + m;
-                    } else {
-                        return '⚽ ' + m;
-                    }
-                }).join('\n')}\n\n`;
+                msg += `*${t.nome.toUpperCase()}*\n${t.membros.map(m => '• ' + m).join('\n')}\n\n`;
             });
 
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
