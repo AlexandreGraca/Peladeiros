@@ -318,14 +318,16 @@
             <p id="msgAviso" style="color: var(--danger); font-size: 0.7rem; display: none;">Total mínimo R$ 15,00</p>
             <input type="hidden" id="editId">
 
-            <!-- Bloco do QR Code -->
-            <div style="text-align: center; margin: 15px 0;">
-                <p style="font-size: 0.7rem; font-weight: bold; color: var(--primary); margin-bottom: 5px;">ESCANEIE
-                    PARA PAGAR
-                    (PIX)</p>
-                <img src="https://i.imgur.com/5Dz3zDQ.jpeg" alt="QR Code Pix"
-                    style="width: 150px; height: 150px; border: 1px solid #ddd; border-radius: 8px; padding: 5px;">
-            </div>
+            <!-- Bloco do QR Code Dinâmico -->
+<div id="container-pix" style="text-align: center; margin: 15px 0; display: none;">
+    <p style="font-size: 0.7rem; font-weight: bold; color: var(--primary); margin-bottom: 5px;">
+        PAGAMENTO PIX: <span id="nome-qr"></span>
+    </p>
+    <div id="qrcode-area">
+        <!-- O QR Code será inserido aqui via JS -->
+    </div>
+    <p style="font-size: 0.6rem; color: #7f8c8d; margin-top: 5px;">Valor sugerido: R$ 15,00</p>
+</div>
 
             <div class="modal-row">
                 <input type="number" id="idade" class="auth-input" placeholder="Idade">
@@ -422,6 +424,33 @@
         });
 
         function logout() { auth.signOut(); }
+
+        function gerarQrCodeDinamico(nomeJogador) {
+    const chavePix = "associacaopeladeiros.fr@gmail.com"; // Pode ser CPF, E-mail ou Telefone
+    const nomeBeneficiario = "Alexandre Luiz Graça";
+    const cidade = "JUIZ DE FORA";
+    const valor = "15.00";
+    const hoje = new Date();
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dataFormatada = `${dia}${mes}`;
+
+    // Nova descrição incluindo Data e Nome (limitado para caber no campo)
+    const descricao = `PELADA-${dataFormatada}-${nomeJogador.substring(0, 8)}`.toUpperCase();
+
+    // Montagem do payload simplificada para QR Code (Formato BRCode)
+    // Para um Pix 100% funcional "Copia e Cola", o ideal é usar uma biblioteca, 
+    // mas para o QR Code de scanner simples, podemos usar a URL da API:
+    
+    const textoPix = `00020126360014BR.GOV.BCB.PIX0114${chavePix}5204000053039865405${valor}5802BR59${nomeBeneficiario.length.toString().padStart(2, '0')}${nomeBeneficiario}6012${cidade}62150511${descricao}`;
+    
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(textoPix)}`;
+    
+    const area = document.getElementById('qrcode-area');
+    area.innerHTML = `<img src="${qrCodeUrl}" style="border: 1px solid #ddd; border-radius: 8px; padding: 5px;">`;
+    document.getElementById('nome-qr').innerText = nomeJogador.toUpperCase();
+    document.getElementById('container-pix').style.display = 'block';
+}
 
         function carregar() {
             const elementoData = document.getElementById('data-topo');
