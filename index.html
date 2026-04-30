@@ -631,8 +631,8 @@
             // Validação de limite (mínimo 7 para 1 time, 14 para 2, etc)
             if (totalJogadores < 7) return alert("Poucos jogadores! Mínimo de 7.");
 
-            // Cálculo dinâmico de quantos times (alvo de 8 por time)
-            const qtdTimes = Math.round(totalJogadores / 8) || 1;
+            // Cálculo dinâmico de quantos times (alvo de 9 por time)
+            const qtdTimes = Math.round(totalJogadores / 9) || 1;
 
             // Verifica se a divisão média fica entre 7 e 9
             const media = totalJogadores / qtdTimes;
