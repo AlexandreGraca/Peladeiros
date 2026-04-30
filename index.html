@@ -567,33 +567,67 @@
 
             doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
 
+            // Filtra apenas jogadores confirmados ou goleiros
             const confirmados = jogadores.filter(j => ((parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)) >= 15 || j.isGoleiro);
+
             let tPix = 0, tDin = 0, tCre = 0;
 
             const rows = confirmados.map(j => {
+                // GARANTIA: Converte para número puro, removendo qualquer caractere estranho
                 const v1 = Number(String(j.v1).replace(/[^0-9.-]+/g, "")) || 0;
                 const v2 = Number(String(j.v2).replace(/[^0-9.-]+/g, "")) || 0;
+                const total = v1 + v2;
 
+                const temCredito = (j.p1 === "Crédito" || j.p2 === "Crédito");
+
+                // Soma matemática real para o resumo
+              
                 [{ v: v1, p: j.p1 }, { v: v2, p: j.p2 }].forEach(pg => {
-                    const cat = String(pg.p).toLowerCase();
-                    if (cat.includes("pix")) tPix += pg.v;
-                    else if (cat.includes("dinheiro")) tDin += pg.v;
-                    else if (cat.includes("crédito") || cat.includes("credito")) tCre += pg.v;
+                    // Convertemos a categoria para minúsculo para evitar erro de digitação
+                    const categoria = String(pg.p).toLowerCase().trim();
+
+                    if (categoria.includes("pix")) {
+                        tPix += pg.v;
+                    } else if (categoria.includes("dinheiro")) {
+                        tDin += pg.v;
+                    } else if (categoria.includes("crédito") || categoria.includes("credito")) {
+                        tCre += pg.v;
+                    }
                 });
 
-                return [j.nome, j.isGoleiro ? "ISENTO" : `R$ ${v1.toFixed(2)}`, v2 > 0 ? `R$ ${v2.toFixed(2)}` : "-", `R$ ${(v1 + v2).toFixed(2)}`];
+                return [
+                    j.nome,
+                    j.isGoleiro ? "ISENTO" : `${j.p1}: R$ ${v1.toFixed(2)}`,
+                    (!j.isGoleiro && v2 > 0) ? `${j.p2}: R$ ${v2.toFixed(2)}` : "-",
+                    `R$ ${total.toFixed(2)}`,
+                    temCredito
+                ];
             });
 
+            // Tabela de Jogadores
             doc.autoTable({
                 startY: 25,
-                head: [['Nome', 'Vlr 1', 'Vlr 2', 'Total']],
-                body: rows
+                head: [['Nome', 'Pagamento 1', 'Pagamento 2', 'Total']],
+                body: rows.map(r => r.slice(0, 4)),
+                styles: { font: "helvetica", fontSize: 10 },
+                didParseCell: function (data) {
+                    if (data.section === 'body' && rows[data.row.index][4] === true) {
+                        data.cell.styles.textColor = [231, 76, 60]; // Vermelho para Crédito
+                    }
+                }
             });
 
+            // Tabela de Resumo (Agora com valores somados corretamente)
             doc.autoTable({
                 startY: doc.lastAutoTable.finalY + 10,
-                head: [['Resumo', 'Total']],
-                body: [['Pix', `R$ ${tPix.toFixed(2)}`], ['Dinheiro', `R$ ${tDin.toFixed(2)}`], ['Crédito', `R$ ${tCre.toFixed(2)}`], ['GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]]
+                head: [['Resumo Financeiro', 'Valor Total']],
+                body: [
+                    ['Pix', `R$ ${tPix.toFixed(2)}`],
+                    ['DINHEIRO', `R$ ${tDin.toFixed(2)}`],
+                    ['CRÉDITO', `R$ ${tCre.toFixed(2)}`],
+                    ['TOTAL GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]
+                ],
+                headStyles: { fillColor: [46, 204, 113] }
             });
 
             doc.save(`Financeiro_${dataF}.pdf`);
