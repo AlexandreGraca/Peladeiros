@@ -753,7 +753,7 @@
             });
 
             // Adiciona a data na primeira linha
-            let msg = `SORTEIO PELADEIROS\n📅 ${dataFormatada}\n\n`;
+            let msg = `SORTEIO PELADEIROS\n ${dataFormatada}\n\n`;
 
             timesAtuais.forEach(t => {
                 msg += `*${t.nome.toUpperCase()}*\n${t.membros.map(m => '• ' + m).join('\n')}\n\n`;
