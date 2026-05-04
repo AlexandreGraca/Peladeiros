@@ -277,28 +277,77 @@
 
         // Lógica de Sorteio (Igual à anterior, usando o j.nivel)
         function sortear() {
-            // Filtra jogadores que pagaram ou são goleiros
-            const ativos = jogadores.filter(j => ((parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)) >= 15 || j.isGoleiro);
-            const totalJogadores = ativos.length;
+    // 1. Filtra quem pagou (R$ 15+) ou é goleiro fixo
+    const ativos = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) >= 15 || j.goleiro === true);
+    
+    if (ativos.length < 7) {
+        return alert("Mínimo de 7 jogadores confirmados para realizar o sorteio.");
+    }
 
-            if (totalJogadores < 7) {
-                return alert("Mínimo de 7 jogadores para realizar o sorteio.");
-            }
+    // 2. Define quantidade de times (baseado em média de 9 por time)
+    let qtdTimes = Math.max(2, Math.floor(ativos.length / 9)); 
+    if (ativos.length > 14 && ativos.length < 18) qtdTimes = 2; // Ajuste para 2 times de 8 ou 9
 
-            // Define quantidade de times (baseado em 9 jogadores por time)
-            let qtdTimes = Math.max(1, Math.floor(totalJogadores / 9));
+    // 3. Separa e embaralha goleiros
+    const goleiros = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
 
-            // Sorteio aleatório de goleiros
-            const goleiros = ativos.filter(j => j.isGoleiro).sort(() => Math.random() - 0.5);
+    // 4. Ordena jogadores de linha por NÍVEL (Habilidade)
+    const linha = ativos.filter(j => !j.goleiro).sort((a, b) => {
+        const nivelA = parseInt(a.nivel) || 3;
+        const nivelB = parseInt(b.nivel) || 3;
+        return nivelB - nivelA; // Craques primeiro
+    });
 
-            // Ordena jogadores de linha por NÍVEL (do maior para o menor) e idade como desempate
-            const linha = ativos.filter(j => !j.isGoleiro).sort((a, b) => {
-                const nivelA = parseInt(a.nivel) || 3;
-                const nivelB = parseInt(b.nivel) || 3;
-                if (nivelB !== nivelA) return nivelB - nivelA;
-                return (a.idade || 0) - (b.idade || 0);
-            });
+    const configCores = [
+        { nome: "Verde", hex: "#27ae60" },
+        { nome: "Amarelo", hex: "#f1c40f" },
+        { nome: "Vermelho", hex: "#e74c3c" },
+        { nome: "Roxo", hex: "#9b59b6" }
+    ];
 
+    // Inicializa os times
+    timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
+        nome: configCores[i]?.nome || `Time ${i + 1}`,
+        cor: configCores[i]?.hex || "#2c3e50",
+        membros: [],
+        somaNivel: 0
+    }));
+
+    // Distribui Goleiros
+    goleiros.forEach((g, i) => {
+        if (i < qtdTimes) {
+            timesAtuais[i].membros.push('🧤 ' + g.nome);
+        } else {
+            // Se houver mais goleiros que times, o extra vai para o primeiro time que tiver vaga de linha
+            linha.push(g); 
+        }
+    });
+
+    // Distribui Linha equilibrando a "Soma de Nível" (Snake Draft)
+    linha.forEach((j) => {
+        // Sempre coloca o próximo jogador no time que tem a menor soma de habilidade no momento
+        timesAtuais.sort((a, b) => a.somaNivel - b.somaNivel);
+        timesAtuais[0].membros.push('⚽ ' + j.nome);
+        timesAtuais[0].somaNivel += (parseInt(j.nivel) || 3);
+    });
+
+    // Renderização HTML (Igual ao seu, mas garantindo a variável correta)
+    const box = document.getElementById('times');
+    box.innerHTML = "<h3 style='margin-top:20px;'>Times Equilibrados</h3>";
+
+    timesAtuais.forEach(t => {
+        box.innerHTML += `
+        <div style="padding:15px; margin:10px 0; border-radius:8px; background:#fff; border:1px solid #ddd; border-left:10px solid ${t.cor};">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <strong style="color:${t.cor};">${t.nome.toUpperCase()}</strong>
+                <span style="font-size:0.7rem; color:#666;">Força: ${t.somaNivel} | ${t.membros.length} jogadores</span>
+            </div>
+            <div style="margin-top:10px; font-size:0.9rem; line-height:1.6;">
+                ${t.membros.join('<br>')}
+            </div>
+        </div>`;
+    });
+}
             const configCores = [
                 { nome: "Verde", hex: "#27ae60" },
                 { nome: "Amarelo", hex: "#f1c40f" },
@@ -361,78 +410,51 @@
             });
         }
        function gerarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const dataF = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const dataF = new Date().toLocaleDateString('pt-BR');
 
-            doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
+    doc.setFontSize(16);
+    doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
 
-            // Filtra apenas jogadores confirmados ou goleiros
-            const confirmados = jogadores.filter(j => ((parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)) >= 15 || j.isGoleiro);
+    const confirmados = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) > 0);
 
-            let tPix = 0, tDin = 0, tCre = 0;
+    let tPix = 0, tDin = 0, tCre = 0;
 
-            const rows = confirmados.map(j => {
-                // GARANTIA: Converte para número puro, removendo qualquer caractere estranho
-                const v1 = Number(String(j.v1).replace(/[^0-9.-]+/g, "")) || 0;
-                const v2 = Number(String(j.v2).replace(/[^0-9.-]+/g, "")) || 0;
-                const total = v1 + v2;
+    const rows = confirmados.map(j => {
+        const valor = parseFloat(j.valorPago) || 0;
+        const forma = j.forma || "Não inf.";
 
-                const temCredito = (j.p1 === "Crédito" || j.p2 === "Crédito");
+        if (forma === "Pix") tPix += valor;
+        else if (forma === "Dinheiro") tDin += valor;
+        else if (forma === "Crédito") tCre += valor;
 
-                // Soma matemática real para o resumo
+        return [j.nome, forma, `R$ ${valor.toFixed(2)}` ];
+    });
 
-                [{ v: v1, p: j.p1 }, { v: v2, p: j.p2 }].forEach(pg => {
-                    // Convertemos a categoria para minúsculo para evitar erro de digitação
-                    const categoria = String(pg.p).toLowerCase().trim();
+    // Tabela de Jogadores
+    doc.autoTable({
+        startY: 25,
+        head: [['Jogador', 'Forma', 'Valor']],
+        body: rows,
+        theme: 'striped'
+    });
 
-                    if (categoria.includes("pix")) {
-                        tPix += pg.v;
-                    } else if (categoria.includes("dinheiro")) {
-                        tDin += pg.v;
-                    } else if (categoria.includes("crédito") || categoria.includes("credito")) {
-                        tCre += pg.v;
-                    }
-                });
+    // Resumo
+    doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 10,
+        head: [['Resumo por Tipo', 'Total']],
+        body: [
+            ['PIX', `R$ ${tPix.toFixed(2)}`],
+            ['DINHEIRO', `R$ ${tDin.toFixed(2)}`],
+            ['CRÉDITO', `R$ ${tCre.toFixed(2)}`],
+            ['TOTAL GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]
+        ],
+        headStyles: { fillColor: [46, 204, 113] }
+    });
 
-                return [
-                    j.nome,
-                    j.isGoleiro ? "ISENTO" : `${j.p1}: R$ ${v1.toFixed(2)}`,
-                    (!j.isGoleiro && v2 > 0) ? `${j.p2}: R$ ${v2.toFixed(2)}` : "-",
-                    `R$ ${total.toFixed(2)}`,
-                    temCredito
-                ];
-            });
-
-            // Tabela de Jogadores
-            doc.autoTable({
-                startY: 25,
-                head: [['Nome', 'Pagamento 1', 'Pagamento 2', 'Total']],
-                body: rows.map(r => r.slice(0, 4)),
-                styles: { font: "helvetica", fontSize: 10 },
-                didParseCell: function (data) {
-                    if (data.section === 'body' && rows[data.row.index][4] === true) {
-                        data.cell.styles.textColor = [231, 76, 60]; // Vermelho para Crédito
-                    }
-                }
-            });
-
-            // Tabela de Resumo (Agora com valores somados corretamente)
-            doc.autoTable({
-                startY: doc.lastAutoTable.finalY + 10,
-                head: [['Resumo Financeiro', 'Valor Total']],
-                body: [
-                    ['PIX', `R$ ${tPix.toFixed(2)}`],
-                    ['DINHEIRO', `R$ ${tDin.toFixed(2)}`],
-                    ['CRÉDITO', `R$ ${tCre.toFixed(2)}`],
-                    ['TOTAL GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]
-                ],
-                headStyles: { fillColor: [46, 204, 113] }
-            });
-
-            doc.save(`Financeiro_${dataF}.pdf`);
-        }
-
+    doc.save(`Financeiro_${dataF.replace(/\//g, '-')}.pdf`);
+}
      function enviarWhatsApp() {
             if (timesAtuais.length === 0) return alert("Sorteie primeiro!");
 
