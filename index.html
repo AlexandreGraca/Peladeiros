@@ -54,52 +54,59 @@
         .btn-draw { background: var(--waiting); }
         .btn-clear { background: #95a5a6; grid-column: span 2; margin-top: 5px; }
 
-               /* Modal - Fundo escuro */
-.modal { 
-    display: none; 
-    position: fixed; 
-    z-index: 999; 
-    left: 0; 
-    top: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: rgba(0,0,0,0.8); 
-    align-items: center; 
-    justify-content: center; 
-    overflow-y: auto; /* Permite scroll se a tela for pequena */
-}
+        /* Modal - Fundo escuro */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 999; 
+            left: 0; top: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); 
+            align-items: center; 
+            justify-content: center; 
+            overflow-y: auto;
+        }
 
-/* Modal - Cartão Branco */
-.modal-content { 
-    background: white; 
-    padding: 25px; 
-    border-radius: 16px; 
-    width: 90%; 
-    max-width: 400px; 
-    margin: auto; /* Garante centralização */
-    position: relative;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
+        /* Modal - Cartão Branco */
+        .modal-content { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 16px; 
+            width: 90%; 
+            max-width: 400px; 
+            margin: auto; 
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
 
-.auth-input { 
-    width: 100%; 
-    padding: 12px; 
-    margin: 5px 0 15px 0; 
-    border: 1px solid #ddd; 
-    border-radius: 8px; 
-    box-sizing: border-box; /* Importante para o padding não estourar a largura */
-}
+        .auth-input { 
+            width: 100%; 
+            padding: 10px; 
+            margin: 5px 0 12px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+        }
 
-.modal-row { 
-    display: flex; 
-    gap: 10px; 
-    width: 100%;
-}
+        .modal-row { display: flex; gap: 10px; width: 100%; }
+        .modal-row > div { flex: 1; }
 
-.modal-row > div { flex: 1; }
+        .btn-save {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+        .btn-save:hover { background: #219150; }
     </style>
 </head>
 <body>
@@ -143,78 +150,66 @@
         <div id="times"></div>
     </div>
 
-   <!-- Modal Pagamento e Dados -->
-<div class="modal" id="modalPagamento">
-    <div class="modal-content">
-        <h3 style="margin-top:0; color:var(--primary);">Dados do Jogador</h3>
-        <input type="hidden" id="editId">
-        
-        <label style="font-size:0.7rem; font-weight:bold;">NOME</label>
-        <input type="text" id="m-nome" class="auth-input">
+    <!-- Modal Pagamento e Dados -->
+    <div class="modal" id="modalPagamento">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:var(--primary); font-size: 1rem;">DADOS DO JOGADOR</h3>
+            <input type="hidden" id="editId">
+            
+            <label style="font-size:0.6rem; font-weight:bold;">NOME</label>
+            <input type="text" id="m-nome" class="auth-input">
 
-        <div class="modal-row">
-            <div>
-                <label style="font-size:0.7rem; font-weight:bold;">NASCIMENTO</label>
-                <input type="date" id="m-nasc" class="auth-input">
-            </div>
-            <div>
-                <label style="font-size:0.7rem; font-weight:bold;">HABILIDADE</label>
-                <select id="m-nivel" class="auth-input">
-                    <option value="5">⭐⭐⭐⭐⭐ Craque</option>
-                    <option value="4">⭐⭐⭐⭐ Bom</option>
-                    <option value="3">⭐⭐⭐ Médio</option>
-                    <option value="2">⭐⭐ Esforçado</option>
-                    <option value="1">⭐ Perna de Pau</option>
-                </select>
-            </div>
-        </div>
-
-        <div style="background:#f9f9f9; padding:15px; border-radius:12px; border: 1px solid #eee; margin-bottom:15px;">
-            <label style="font-size:0.7rem; font-weight:bold;">PAGAMENTO 1</label>
             <div class="modal-row">
-                <input type="number" id="m-valor" class="auth-input" placeholder="R$ 0.00">
-                <select id="m-forma" class="auth-input">
-                    <option value="Pix">Pix</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="Crédito">Crédito</option>
-                </select>
-            </div>
-
-            <label style="font-size:0.7rem; font-weight:bold;">PAGAMENTO 2 (OPCIONAL)</label>
-            <div class="modal-row">
-                <input type="number" id="m-valor2" class="auth-input" placeholder="R$ 0.00">
-                <select id="m-forma2" class="auth-input">
-                    <option value="">-</option>
-                    <option value="Pix">Pix</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="Crédito">Crédito</option>
-                </select>
-            </div>
-
-            <div style="display:flex; align-items:center; gap:10px;">
-                <input type="checkbox" id="m-goleiro" style="width:18px; height:18px;">
-                <label style="font-size:0.8rem; font-weight:bold;">Goleiro (Fixo)</label>
-            </div>
-        </div>
-
-        <!-- Botões de Ação - Devem estar aqui dentro -->
-        <button class="btn-save" onclick="salvarTudo()">Confirmar e Salvar</button>
-        
-        <div style="display:flex; justify-content: space-between; margin-top:10px;">
-            <button onclick="fecharModal()" style="background:none; border:none; color:#7f8c8d; cursor:pointer; font-size:0.8rem;">Cancelar</button>
-            <button onclick="removerDoBanco()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.7rem; font-weight:bold;">Excluir Jogador</button>
-        </div>
-    </div>
-</div>
-                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                    <input type="checkbox" id="m-goleiro">
-                    <label style="font-size:0.8rem;">Goleiro (Fixo)</label>
+                <div>
+                    <label style="font-size:0.6rem; font-weight:bold;">NASCIMENTO</label>
+                    <input type="date" id="m-nasc" class="auth-input">
+                </div>
+                <div>
+                    <label style="font-size:0.6rem; font-weight:bold;">HABILIDADE</label>
+                    <select id="m-nivel" class="auth-input">
+                        <option value="5">⭐⭐⭐⭐⭐ Craque</option>
+                        <option value="4">⭐⭐⭐⭐ Bom</option>
+                        <option value="3">⭐⭐⭐ Médio</option>
+                        <option value="2">⭐⭐ Esforçado</option>
+                        <option value="1">⭐ Perna de Pau</option>
+                    </select>
                 </div>
             </div>
 
-            <button class="btn-save" onclick="salvarTudo()" style="margin-top:15px;">Confirmar e Salvar</button>
-            <button onclick="fecharModal()" style="width:100%; border:none; background:none; padding:10px; cursor:pointer;">Cancelar</button>
-            <button onclick="removerDoBanco()" style="color:red; font-size:0.6rem; border:none; background:none; width:100%; margin-top:10px;">Excluir Jogador do Banco</button>
+            <div style="background:#f9f9f9; padding:12px; border-radius:12px; border: 1px solid #eee; margin-bottom:10px;">
+                <label style="font-size:0.6rem; font-weight:bold;">PAGAMENTO 1</label>
+                <div class="modal-row">
+                    <input type="number" id="m-valor" class="auth-input" placeholder="R$ 0.00">
+                    <select id="m-forma" class="auth-input">
+                        <option value="Pix">Pix</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Crédito">Crédito</option>
+                    </select>
+                </div>
+
+                <label style="font-size:0.6rem; font-weight:bold;">PAGAMENTO 2 (OPCIONAL)</label>
+                <div class="modal-row">
+                    <input type="number" id="m-valor2" class="auth-input" placeholder="R$ 0.00">
+                    <select id="m-forma2" class="auth-input">
+                        <option value="">-</option>
+                        <option value="Pix">Pix</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="Crédito">Crédito</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:10px; margin-top: 5px;">
+                    <input type="checkbox" id="m-goleiro" style="width:18px; height:18px;">
+                    <label style="font-size:0.8rem; font-weight:bold;">Goleiro (Fixo)</label>
+                </div>
+            </div>
+
+            <button class="btn-save" onclick="salvarTudo()">Confirmar e Salvar</button>
+            
+            <div style="display:flex; justify-content: space-between; margin-top:10px;">
+                <button onclick="fecharModal()" style="background:none; border:none; color:#7f8c8d; cursor:pointer; font-size:0.8rem;">Cancelar</button>
+                <button onclick="removerDoBanco()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.7rem; font-weight:bold;">Excluir do Banco</button>
+            </div>
         </div>
     </div>
 
@@ -268,7 +263,7 @@
             const n = document.getElementById('inNome').value.trim();
             if (!n) return;
             await db.collection("jogadores").add({
-                nome: n, valorPago: 0, forma: "", goleiro: false, nivel: 3, nascimento: ""
+                nome: n, valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, nivel: 3, nascimento: ""
             });
             document.getElementById('inNome').value = "";
         }
@@ -281,16 +276,20 @@
 
             listaJogadores.forEach(j => {
                 const idade = calcularIdade(j.nascimento);
-                const isConfirmado = (parseFloat(j.valorPago) || 0) >= 15 || j.goleiro === true;
+                // AJUSTE: Soma os dois valores pagos
+                const totalPago = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
+                const isConfirmado = totalPago >= 15 || j.goleiro === true;
                 const classe = isConfirmado ? 'bg-confirmado' : 'bg-espera';
                 
+                let detalhe = j.goleiro ? '🧤 Goleiro' : (isConfirmado ? (j.forma + (j.forma2 ? ' + ' + j.forma2 : '')) + ' - ' + j.nivel + '★' : 'Aguardando');
+
                 const html = `
                     <li class="player-item ${classe}" onclick="abrirEdicao('${j.id}')">
                         <div class="player-info">
                             <strong>${j.nome} ${idade ? '('+idade+'a)' : ''}</strong>
-                            <span>${j.goleiro ? '🧤 Goleiro' : (isConfirmado ? j.forma + ' - ' + j.nivel + '★' : 'Aguardando')}</span>
+                            <span>${detalhe}</span>
                         </div>
-                        <div class="player-total">${isConfirmado ? 'R$ '+ (parseFloat(j.valorPago) || 0).toFixed(2) : '---'}</div>
+                        <div class="player-total">${isConfirmado ? 'R$ '+ totalPago.toFixed(2) : '---'}</div>
                     </li>
                 `;
 
@@ -303,45 +302,40 @@
         }
 
         function abrirEdicao(id) {
-    const j = listaJogadores.find(x => x.id === id);
-    document.getElementById('editId').value = id;
-    document.getElementById('m-nome').value = j.nome;
-    document.getElementById('m-nasc').value = j.nascimento || "";
-    document.getElementById('m-nivel').value = j.nivel || 3;
-    
-    // Pagamento 1
-    document.getElementById('m-valor').value = j.valorPago || "";
-    document.getElementById('m-forma').value = j.forma || "Pix";
-    
-    // Pagamento 2
-    document.getElementById('m-valor2').value = j.valorPago2 || "";
-    document.getElementById('m-forma2').value = j.forma2 || "";
-    
-    document.getElementById('m-goleiro').checked = j.goleiro || false;
-    document.getElementById('modalPagamento').style.display = 'flex';
-}
+            const j = listaJogadores.find(x => x.id === id);
+            document.getElementById('editId').value = id;
+            document.getElementById('m-nome').value = j.nome;
+            document.getElementById('m-nasc').value = j.nascimento || "";
+            document.getElementById('m-nivel').value = j.nivel || 3;
+            document.getElementById('m-valor').value = j.valorPago || "";
+            document.getElementById('m-forma').value = j.forma || "Pix";
+            document.getElementById('m-valor2').value = j.valorPago2 || "";
+            document.getElementById('m-forma2').value = j.forma2 || "";
+            document.getElementById('m-goleiro').checked = j.goleiro || false;
+            document.getElementById('modalPagamento').style.display = 'flex';
+        }
 
-async function salvarTudo() {
-    const id = document.getElementById('editId').value;
-    const dados = {
-        nome: document.getElementById('m-nome').value,
-        nascimento: document.getElementById('m-nasc').value,
-        nivel: parseInt(document.getElementById('m-nivel').value),
-        valorPago: parseFloat(document.getElementById('m-valor').value) || 0,
-        forma: document.getElementById('m-forma').value,
-        valorPago2: parseFloat(document.getElementById('m-valor2').value) || 0,
-        forma2: document.getElementById('m-forma2').value,
-        goleiro: document.getElementById('m-goleiro').checked
-    };
-    await db.collection("jogadores").doc(id).update(dados);
-    fecharModal();
-}
+        async function salvarTudo() {
+            const id = document.getElementById('editId').value;
+            const dados = {
+                nome: document.getElementById('m-nome').value,
+                nascimento: document.getElementById('m-nasc').value,
+                nivel: parseInt(document.getElementById('m-nivel').value),
+                valorPago: parseFloat(document.getElementById('m-valor').value) || 0,
+                forma: document.getElementById('m-forma').value,
+                valorPago2: parseFloat(document.getElementById('m-valor2').value) || 0,
+                forma2: document.getElementById('m-forma2').value,
+                goleiro: document.getElementById('m-goleiro').checked
+            };
+            await db.collection("jogadores").doc(id).update(dados);
+            fecharModal();
+        }
 
         async function limparPagamentos() {
-            if (!confirm("Zerar pagamentos do dia? (Nomes e Idades serão mantidos)")) return;
+            if (!confirm("Zerar pagamentos do dia?")) return;
             const batch = db.batch();
             listaJogadores.forEach(j => {
-                batch.update(db.collection("jogadores").doc(j.id), { valorPago: 0, forma: "", goleiro: false });
+                batch.update(db.collection("jogadores").doc(j.id), { valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false });
             });
             await batch.commit();
         }
@@ -355,132 +349,94 @@ async function salvarTudo() {
 
         function fecharModal() { document.getElementById('modalPagamento').style.display = 'none'; }
 
-        // Lógica de Sorteio Equilibrada
         function sortear() {
-            const ativos = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) >= 15 || j.goleiro === true);
-            if (ativos.length < 7) return alert("Mínimo de 7 confirmados para sortear.");
+            const ativos = listaJogadores.filter(j => ((parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0)) >= 15 || j.goleiro === true);
+            if (ativos.length < 7) return alert("Mínimo de 7 confirmados.");
 
-            // Definição de times (média 9 por time)
             let qtdTimes = Math.max(2, Math.floor(ativos.length / 9));
             if (ativos.length > 14 && ativos.length < 18) qtdTimes = 2;
 
             const goleiros = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
             const linha = ativos.filter(j => !j.goleiro).sort((a, b) => (b.nivel || 3) - (a.nivel || 3));
 
-            const configCores = [
-                { n: "Verde", c: "#27ae60" }, { n: "Amarelo", c: "#f1c40f" },
-                { n: "Vermelho", c: "#e74c3c" }, { n: "Roxo", c: "#9b59b6" }
-            ];
+            const configCores = [{n:"Verde",c:"#27ae60"},{n:"Amarelo",c:"#f1c40f"},{n:"Vermelho",c:"#e74c3c"},{n:"Roxo",c:"#9b59b6"}];
+            timesAtuais = Array.from({length:qtdTimes},(_,i)=>({nome:configCores[i]?.n||`Time ${i+1}`,cor:configCores[i]?.c||"#2c3e50",membros:[],somaNivel:0}));
 
-            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
-                nome: configCores[i]?.n || `Time ${i+1}`,
-                cor: configCores[i]?.c || "#2c3e50",
-                membros: [],
-                somaNivel: 0
-            }));
-
-            const timeLaranja = { nome: "Laranja (Reserva)", cor: "#e67e22", membros: [], somaNivel: 0 };
-
-            // Distribuir Goleiros
-            goleiros.forEach((g, i) => {
+            goleiros.forEach((g,i) => {
                 if (i < qtdTimes) timesAtuais[i].membros.push('🧤 ' + g.nome);
-                else timeLaranja.membros.push('🧤 ' + g.nome);
             });
 
-            // Snake Draft para Linha
             linha.forEach(j => {
-                const timesComVaga = timesAtuais.filter(t => t.membros.length < 9);
-                if (timesComVaga.length > 0) {
-                    timesComVaga.sort((a, b) => a.somaNivel - b.somaNivel);
-                    timesComVaga[0].membros.push('⚽ ' + j.nome);
-                    timesComVaga[0].somaNivel += (j.nivel || 3);
-                } else {
-                    timeLaranja.membros.push(j.nome);
-                }
+                timesAtuais.sort((a, b) => a.membros.length - b.membros.length || a.somaNivel - b.somaNivel);
+                timesAtuais[0].membros.push('⚽ ' + j.nome);
+                timesAtuais[0].somaNivel += (j.nivel || 3);
             });
-
-            if (timeLaranja.membros.length > 0) timesAtuais.push(timeLaranja);
 
             const box = document.getElementById('times');
             box.innerHTML = "<h3 style='margin-top:20px;'>Times Equilibrados</h3>";
             timesAtuais.forEach(t => {
                 box.innerHTML += `
                 <div style="padding:15px; margin:10px 0; border-radius:8px; background:#fff; border:1px solid #ddd; border-left:10px solid ${t.cor};">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <strong style="color:${t.cor};">${t.nome.toUpperCase()}</strong>
-                        <span style="font-size:0.7rem; color:#666;">Força: ${t.somaNivel} | ${t.membros.length} Jogs</span>
-                    </div>
-                    <div style="margin-top:10px; font-size:0.9rem; line-height:1.6;">${t.membros.join('<br>')}</div>
+                    <strong style="color:${t.cor};">${t.nome.toUpperCase()}</strong>
+                    <div style="margin-top:10px; font-size:0.9rem;">${t.membros.join('<br>')}</div>
                 </div>`;
             });
         }
 
         function gerarPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const dataF = new Date().toLocaleDateString('pt-BR');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const dataF = new Date().toLocaleDateString('pt-BR');
 
-    doc.setFontSize(16);
-    doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
+            doc.setFontSize(16);
+            doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
 
-    const pagantes = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) > 0 || (parseFloat(j.valorPago2) || 0) > 0);
-    
-    let tPix = 0, tDin = 0, tCre = 0;
+            const pagantes = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) > 0 || (parseFloat(j.valorPago2) || 0) > 0);
+            let tPix = 0, tDin = 0, tCre = 0;
 
-    const rows = pagantes.map(j => {
-        const v1 = parseFloat(j.valorPago) || 0;
-        const v2 = parseFloat(j.valorPago2) || 0;
-        const f1 = j.forma || "";
-        const f2 = j.forma2 || "";
+            const rows = pagantes.map(j => {
+                const v1 = parseFloat(j.valorPago) || 0;
+                const v2 = parseFloat(j.valorPago2) || 0;
+                const f1 = j.forma || "";
+                const f2 = j.forma2 || "";
 
-        // Soma para o resumo
-        [ {v: v1, f: f1}, {v: v2, f: f2} ].forEach(p => {
-            if (p.f === "Pix") tPix += p.v;
-            else if (p.f === "Dinheiro") tDin += p.v;
-            else if (p.f === "Crédito") tCre += p.v;
-        });
+                [ {v: v1, f: f1}, {v: v2, f: f2} ].forEach(p => {
+                    if (p.f === "Pix") tPix += p.v;
+                    else if (p.f === "Dinheiro") tDin += p.v;
+                    else if (p.f === "Crédito") tCre += p.v;
+                });
 
-        const infoPagamento = f2 ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}` : `${f1}: R$${v1.toFixed(2)}`;
-        const totalLinha = `R$ ${(v1 + v2).toFixed(2)}`;
+                const info = f2 ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}` : `${f1}: R$${v1.toFixed(2)}`;
+                return [j.nome, info, `R$ ${(v1+v2).toFixed(2)}` ];
+            });
 
-        return [j.nome, infoPagamento, totalLinha];
-    });
-
-    doc.autoTable({
-        startY: 25,
-        head: [['Jogador', 'Detalhes (Forma/Valor)', 'Total']],
-        body: rows,
-        theme: 'striped',
-        didDrawCell: (data) => {
-            // Se a célula contém a palavra "Crédito", pintamos o texto de vermelho
-            if (data.section === 'body' && data.column.index === 1) {
-                if (data.cell.raw.includes("Crédito")) {
-                    doc.setTextColor(231, 76, 60); // Cor var(--danger)
-                } else {
-                    doc.setTextColor(44, 62, 80); // Cor normal
+            doc.autoTable({
+                startY: 25,
+                head: [['Jogador', 'Detalhes', 'Total']],
+                body: rows,
+                didDrawCell: (data) => {
+                    // AJUSTE: Pintar de vermelho se houver Crédito
+                    if (data.section === 'body' && data.column.index === 1) {
+                        const texto = data.cell.text.join(' ');
+                        if (texto.includes("Crédito")) doc.setTextColor(231, 76, 60);
+                        else doc.setTextColor(44, 62, 80);
+                    }
                 }
-            }
+            });
+
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 10,
+                head: [['Resumo', 'Valor']],
+                body: [['PIX',`R$ ${tPix.toFixed(2)}`],['DINHEIRO',`R$ ${tDin.toFixed(2)}`],['CRÉDITO',`R$ ${tCre.toFixed(2)}`],['TOTAL',`R$ ${(tPix+tDin+tCre).toFixed(2)}`]],
+                headStyles: {fillColor: [46, 204, 113]}
+            });
+
+            doc.save(`Financeiro_${dataF.replace(/\//g, '-')}.pdf`);
         }
-    });
 
-    doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 10,
-        head: [['Resumo Final', 'Total']],
-        body: [
-            ['PIX', `R$ ${tPix.toFixed(2)}`],
-            ['DINHEIRO', `R$ ${tDin.toFixed(2)}`],
-            ['CRÉDITO', `R$ ${tCre.toFixed(2)}`],
-            ['TOTAL GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]
-        ],
-        headStyles: { fillColor: [46, 204, 113] }
-    });
-
-    doc.save(`Financeiro_${dataF.replace(/\//g, '-')}.pdf`);
-}
         function enviarWhatsApp() {
             if (timesAtuais.length === 0) return alert("Sorteie primeiro!");
-            const dataFormatada = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
-            let msg = `*SORTEIO PELADEIROS*\n_${dataFormatada}_\n\n`;
+            let msg = `*SORTEIO PELADEIROS*\n\n`;
             timesAtuais.forEach(t => {
                 msg += `*${t.nome.toUpperCase()}*\n${t.membros.map(m => '• ' + m).join('\n')}\n\n`;
             });
