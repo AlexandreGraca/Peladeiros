@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Peladeiros - Gestão</title>
+    <title>Peladeiros - Gestão Premium</title>
 
     <!-- Firebase & Bibliotecas -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -18,7 +18,6 @@
             --accent: #27ae60;
             --danger: #e74c3c;
             --waiting: #3498db;
-            --goleiro: #f39c12;
         }
 
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
@@ -39,7 +38,6 @@
             padding: 10px; margin-bottom: 5px; border-radius: 8px; cursor: pointer;
             border: 1px solid #eee; transition: 0.2s;
         }
-        .player-item:hover { transform: scale(1.01); }
         .bg-confirmado { background: #e8f5e9; border-left: 5px solid var(--accent); }
         .bg-espera { background: #fff; border-left: 5px solid #bdc3c7; }
 
@@ -54,59 +52,34 @@
         .btn-draw { background: var(--waiting); }
         .btn-clear { background: #95a5a6; grid-column: span 2; margin-top: 5px; }
 
-        /* Modal - Fundo escuro */
         .modal { 
-            display: none; 
-            position: fixed; 
-            z-index: 999; 
+            display: none; position: fixed; z-index: 999; 
             left: 0; top: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); 
-            align-items: center; 
-            justify-content: center; 
-            overflow-y: auto;
+            background: rgba(0,0,0,0.8); align-items: center; justify-content: center; 
         }
 
-        /* Modal - Cartão Branco */
         .modal-content { 
-            background: white; 
-            padding: 25px; 
-            border-radius: 16px; 
-            width: 90%; 
-            max-width: 400px; 
-            margin: auto; 
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+            background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; 
+            display: flex; flex-direction: column; gap: 5px;
         }
 
-        .auth-input { 
-            width: 100%; 
-            padding: 10px; 
-            margin: 5px 0 12px 0; 
-            border: 1px solid #ddd; 
-            border-radius: 8px; 
-            box-sizing: border-box; 
-        }
-
-        .modal-row { display: flex; gap: 10px; width: 100%; }
+        .auth-input { width: 100%; padding: 10px; margin: 5px 0 12px 0; border: 1px solid #ddd; border-radius: 8px; }
+        .modal-row { display: flex; gap: 10px; }
         .modal-row > div { flex: 1; }
 
         .btn-save {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 1rem;
-            width: 100%;
-            margin-top: 10px;
-            transition: background 0.3s;
+            background: var(--accent); color: white; border: none; padding: 15px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem;
+            width: 100%; margin-top: 10px;
         }
-        .btn-save:hover { background: #219150; }
+
+        .card-time {
+            padding: 15px; margin: 10px 0; border-radius: 8px; background: #fff; 
+            border: 1px solid #ddd; position: relative;
+        }
+        .stats-badge {
+            font-size: 0.65rem; background: #f0f2f5; padding: 2px 8px; border-radius: 10px; color: #555; margin-right: 5px;
+        }
     </style>
 </head>
 <body>
@@ -116,7 +89,6 @@
             <img src="https://i.imgur.com/zSl9YOk.jpeg" style="width:60px; border-radius:50%;">
             <h2>Peladeiros</h2>
             <button onclick="loginGoogle()" style="padding:12px; width:100%; cursor:pointer; border-radius: 8px; border: 1px solid #ccc; background: white; font-weight: bold;">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:15px; vertical-align:middle; margin-right:8px;">
                 Entrar com Google
             </button>
         </div>
@@ -126,7 +98,7 @@
         <header>
             <button onclick="logout()" style="position:absolute; right:0; top:0; font-size:0.6rem; background:none; border:none; color:red; cursor:pointer;">Sair</button>
             <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
-            <h1 style="font-size: 1.2rem;">⚽ Sorteio ⚽</h1>
+            <h1 style="font-size: 1.2rem;">⚽ Gestão de Pelada ⚽</h1>
             <p id="data-topo" style="font-size:0.8rem; color:#7f8c8d;"></p>
         </header>
 
@@ -150,10 +122,10 @@
         <div id="times"></div>
     </div>
 
-    <!-- Modal Pagamento e Dados -->
+    <!-- Modal Edição -->
     <div class="modal" id="modalPagamento">
         <div class="modal-content">
-            <h3 style="margin-top:0; color:var(--primary); font-size: 1rem;">DADOS DO JOGADOR</h3>
+            <h3 style="margin-top:0; color:var(--primary);">DADOS DO JOGADOR</h3>
             <input type="hidden" id="editId">
             
             <label style="font-size:0.6rem; font-weight:bold;">NOME</label>
@@ -167,16 +139,16 @@
                 <div>
                     <label style="font-size:0.6rem; font-weight:bold;">HABILIDADE</label>
                     <select id="m-nivel" class="auth-input">
-                        <option value="5">⭐⭐⭐⭐⭐ Craque</option>
-                        <option value="4">⭐⭐⭐⭐ Bom</option>
-                        <option value="3">⭐⭐⭐ Médio</option>
-                        <option value="2">⭐⭐ Esforçado</option>
-                        <option value="1">⭐ Perna de Pau</option>
+                        <option value="5">5 - Craque</option>
+                        <option value="4">4 - Bom</option>
+                        <option value="3">3 - Médio</option>
+                        <option value="2">2 - Esforçado</option>
+                        <option value="1">1 - Perna de Pau</option>
                     </select>
                 </div>
             </div>
 
-            <div style="background:#f9f9f9; padding:12px; border-radius:12px; border: 1px solid #eee; margin-bottom:10px;">
+            <div style="background:#f9f9f9; padding:12px; border-radius:12px; border: 1px solid #eee;">
                 <label style="font-size:0.6rem; font-weight:bold;">PAGAMENTO 1</label>
                 <div class="modal-row">
                     <input type="number" id="m-valor" class="auth-input" placeholder="R$ 0.00">
@@ -187,33 +159,30 @@
                     </select>
                 </div>
 
-                <label style="font-size:0.6rem; font-weight:bold;">PAGAMENTO 2 (OPCIONAL)</label>
+                <label style="font-size:0.6rem; font-weight:bold;">PAGAMENTO 2</label>
                 <div class="modal-row">
                     <input type="number" id="m-valor2" class="auth-input" placeholder="R$ 0.00">
                     <select id="m-forma2" class="auth-input">
-                        <option value="">-</option>
+                        <option value="">Nenhum</option>
                         <option value="Pix">Pix</option>
                         <option value="Dinheiro">Dinheiro</option>
                         <option value="Crédito">Crédito</option>
                     </select>
                 </div>
 
-                <div style="display:flex; align-items:center; gap:10px; margin-top: 5px;">
-                    <input type="checkbox" id="m-goleiro" style="width:18px; height:18px;">
-                    <label style="font-size:0.8rem; font-weight:bold;">Goleiro (Fixo)</label>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" id="m-goleiro">
+                    <label style="font-size:0.8rem; font-weight:bold;">Goleiro Fixo</label>
                 </div>
             </div>
 
             <button class="btn-save" onclick="salvarTudo()">Confirmar e Salvar</button>
-            
-            <div style="display:flex; justify-content: space-between; margin-top:10px;">
-                <button onclick="fecharModal()" style="background:none; border:none; color:#7f8c8d; cursor:pointer; font-size:0.8rem;">Cancelar</button>
-                <button onclick="removerDoBanco()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:0.7rem; font-weight:bold;">Excluir do Banco</button>
-            </div>
+            <button onclick="fecharModal()" style="background:none; border:none; color:#7f8c8d; cursor:pointer; margin-top:10px;">Cancelar</button>
         </div>
     </div>
 
     <script>
+        // Configuração Firebase (Mantida conforme seu original)
         const firebaseConfig = {
             apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
             authDomain: "dbpeladeiros.firebaseapp.com",
@@ -244,7 +213,7 @@
         });
 
         function calcularIdade(dataNasc) {
-            if (!dataNasc) return "";
+            if (!dataNasc) return null;
             const hoje = new Date();
             const nasc = new Date(dataNasc);
             let idade = hoje.getFullYear() - nasc.getFullYear();
@@ -272,31 +241,24 @@
             const lc = document.getElementById('listaConfirmados');
             const le = document.getElementById('listaEspera');
             lc.innerHTML = ""; le.innerHTML = "";
-            let qC = 0; let qE = 0;
+            let qC = 0, qE = 0;
 
             listaJogadores.forEach(j => {
                 const idade = calcularIdade(j.nascimento);
-                // AJUSTE: Soma os dois valores pagos
                 const totalPago = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
-                const isConfirmado = totalPago >= 15 || j.goleiro === true;
-                const classe = isConfirmado ? 'bg-confirmado' : 'bg-espera';
+                const isConfirmado = totalPago >= 15 || j.goleiro;
                 
-                let detalhe = j.goleiro ? '🧤 Goleiro' : (isConfirmado ? (j.forma + (j.forma2 ? ' + ' + j.forma2 : '')) + ' - ' + j.nivel + '★' : 'Aguardando');
-
                 const html = `
-                    <li class="player-item ${classe}" onclick="abrirEdicao('${j.id}')">
+                    <li class="player-item ${isConfirmado ? 'bg-confirmado' : 'bg-espera'}" onclick="abrirEdicao('${j.id}')">
                         <div class="player-info">
                             <strong>${j.nome} ${idade ? '('+idade+'a)' : ''}</strong>
-                            <span>${detalhe}</span>
+                            <span>${j.goleiro ? '🧤 Goleiro' : (isConfirmado ? j.forma + ' - ' + j.nivel + '★' : 'Pendente')}</span>
                         </div>
                         <div class="player-total">${isConfirmado ? 'R$ '+ totalPago.toFixed(2) : '---'}</div>
                     </li>
                 `;
-
-                if (isConfirmado) { lc.innerHTML += html; qC++; }
-                else { le.innerHTML += html; qE++; }
+                if (isConfirmado) { lc.innerHTML += html; qC++; } else { le.innerHTML += html; qE++; }
             });
-
             document.getElementById('tituloConfirmados').innerText = `Confirmados (${qC})`;
             document.getElementById('tituloEspera').innerText = `Cadastro / Espera (${qE})`;
         }
@@ -317,7 +279,7 @@
 
         async function salvarTudo() {
             const id = document.getElementById('editId').value;
-            const dados = {
+            await db.collection("jogadores").doc(id).update({
                 nome: document.getElementById('m-nome').value,
                 nascimento: document.getElementById('m-nasc').value,
                 nivel: parseInt(document.getElementById('m-nivel').value),
@@ -326,13 +288,14 @@
                 valorPago2: parseFloat(document.getElementById('m-valor2').value) || 0,
                 forma2: document.getElementById('m-forma2').value,
                 goleiro: document.getElementById('m-goleiro').checked
-            };
-            await db.collection("jogadores").doc(id).update(dados);
+            });
             fecharModal();
         }
 
+        function fecharModal() { document.getElementById('modalPagamento').style.display = 'none'; }
+
         async function limparPagamentos() {
-            if (!confirm("Zerar pagamentos do dia?")) return;
+            if (!confirm("Zerar caixa do dia?")) return;
             const batch = db.batch();
             listaJogadores.forEach(j => {
                 batch.update(db.collection("jogadores").doc(j.id), { valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false });
@@ -340,45 +303,42 @@
             await batch.commit();
         }
 
-        async function removerDoBanco() {
-            if (confirm("Remover este jogador permanentemente?")) {
-                await db.collection("jogadores").doc(document.getElementById('editId').value).delete();
-                fecharModal();
-            }
-        }
-
-        function fecharModal() { document.getElementById('modalPagamento').style.display = 'none'; }
-
         function sortear() {
-            const ativos = listaJogadores.filter(j => ((parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0)) >= 15 || j.goleiro === true);
-            if (ativos.length < 7) return alert("Mínimo de 7 confirmados.");
+            const ativos = listaJogadores.filter(j => ((parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0)) >= 15 || j.goleiro);
+            if (ativos.length < 5) return alert("Mínimo de 5 jogadores.");
 
-            let qtdTimes = Math.max(2, Math.floor(ativos.length / 9));
-            if (ativos.length > 14 && ativos.length < 18) qtdTimes = 2;
-
+            let qtdTimes = Math.max(2, Math.floor(ativos.length / 6));
             const goleiros = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
-            const linha = ativos.filter(j => !j.goleiro).sort((a, b) => (b.nivel || 3) - (a.nivel || 3));
+            const linha = ativos.filter(j => !j.goleiro).sort((a, b) => b.nivel - a.nivel);
 
-            const configCores = [{n:"Verde",c:"#27ae60"},{n:"Amarelo",c:"#f1c40f"},{n:"Vermelho",c:"#e74c3c"},{n:"Roxo",c:"#9b59b6"}];
-            timesAtuais = Array.from({length:qtdTimes},(_,i)=>({nome:configCores[i]?.n||`Time ${i+1}`,cor:configCores[i]?.c||"#2c3e50",membros:[],somaNivel:0}));
+            const cores = [{n:"Verde",c:"#27ae60"},{n:"Amarelo",c:"#f1c40f"},{n:"Vermelho",c:"#e74c3c"},{n:"Azul",c:"#3498db"}];
+            timesAtuais = Array.from({length:qtdTimes},(_,i)=>({nome:cores[i].n, cor:cores[i].c, membros:[], somaNivel:0, somaIdade:0, contaIdade:0}));
 
-            goleiros.forEach((g,i) => {
-                if (i < qtdTimes) timesAtuais[i].membros.push('🧤 ' + g.nome);
-            });
+            goleiros.forEach((g,i) => { if (i < qtdTimes) { timesAtuais[i].membros.push('🧤 ' + g.nome); const id = calcularIdade(g.nascimento); if(id){timesAtuais[i].somaIdade+=id; timesAtuais[i].contaIdade++;} }});
 
             linha.forEach(j => {
                 timesAtuais.sort((a, b) => a.membros.length - b.membros.length || a.somaNivel - b.somaNivel);
                 timesAtuais[0].membros.push('⚽ ' + j.nome);
-                timesAtuais[0].somaNivel += (j.nivel || 3);
+                timesAtuais[0].somaNivel += j.nivel;
+                const id = calcularIdade(j.nascimento);
+                if(id){ timesAtuais[0].somaIdade += id; timesAtuais[0].contaIdade++; }
             });
 
             const box = document.getElementById('times');
-            box.innerHTML = "<h3 style='margin-top:20px;'>Times Equilibrados</h3>";
+            box.innerHTML = "<h3>Times Sorteados</h3>";
             timesAtuais.forEach(t => {
+                const mediaIdade = t.contaIdade > 0 ? (t.somaIdade / t.contaIdade).toFixed(1) : "---";
+                const forcaMedia = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
                 box.innerHTML += `
-                <div style="padding:15px; margin:10px 0; border-radius:8px; background:#fff; border:1px solid #ddd; border-left:10px solid ${t.cor};">
-                    <strong style="color:${t.cor};">${t.nome.toUpperCase()}</strong>
-                    <div style="margin-top:10px; font-size:0.9rem;">${t.membros.join('<br>')}</div>
+                <div class="card-time" style="border-left: 10px solid ${t.cor}">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong style="color:${t.cor}">${t.nome}</strong>
+                        <div>
+                            <span class="stats-badge">🎂 Méd. Idade: ${mediaIdade}</span>
+                            <span class="stats-badge">⭐ Força: ${forcaMedia}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px; font-size:0.85rem; line-height:1.4;">${t.membros.join('<br>')}</div>
                 </div>`;
             });
         }
@@ -389,56 +349,43 @@
             const dataF = new Date().toLocaleDateString('pt-BR');
 
             doc.setFontSize(16);
-            doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
+            doc.text(`Relatório Financeiro - ${dataF}`, 14, 15);
 
-            const pagantes = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) > 0 || (parseFloat(j.valorPago2) || 0) > 0);
-            let tPix = 0, tDin = 0, tCre = 0;
-
+            const pagantes = listaJogadores.filter(j => (j.valorPago + j.valorPago2) > 0);
             const rows = pagantes.map(j => {
-                const v1 = parseFloat(j.valorPago) || 0;
-                const v2 = parseFloat(j.valorPago2) || 0;
-                const f1 = j.forma || "";
-                const f2 = j.forma2 || "";
-
-                [ {v: v1, f: f1}, {v: v2, f: f2} ].forEach(p => {
-                    if (p.f === "Pix") tPix += p.v;
-                    else if (p.f === "Dinheiro") tDin += p.v;
-                    else if (p.f === "Crédito") tCre += p.v;
-                });
-
-                const info = f2 ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}` : `${f1}: R$${v1.toFixed(2)}`;
-                return [j.nome, info, `R$ ${(v1+v2).toFixed(2)}` ];
+                const det = j.forma2 ? `${j.forma}: R$${j.valorPago} | ${j.forma2}: R$${j.valorPago2}` : `${j.forma}: R$${j.valorPago}`;
+                return [j.nome, det, `R$ ${(j.valorPago + j.valorPago2).toFixed(2)}` ];
             });
 
             doc.autoTable({
                 startY: 25,
-                head: [['Jogador', 'Detalhes', 'Total']],
+                head: [['Jogador', 'Forma de Pagamento', 'Total']],
                 body: rows,
                 didDrawCell: (data) => {
-                    // AJUSTE: Pintar de vermelho se houver Crédito
+                    // CORREÇÃO: Aplicar vermelho em tempo real se a célula contiver "Crédito"
                     if (data.section === 'body' && data.column.index === 1) {
                         const texto = data.cell.text.join(' ');
-                        if (texto.includes("Crédito")) doc.setTextColor(231, 76, 60);
-                        else doc.setTextColor(44, 62, 80);
+                        if (texto.includes("Crédito")) {
+                            doc.setTextColor(231, 76, 60); // Vermelho
+                        } else {
+                            doc.setTextColor(44, 62, 80); // Cor padrão
+                        }
                     }
                 }
             });
-
-            doc.autoTable({
-                startY: doc.lastAutoTable.finalY + 10,
-                head: [['Resumo', 'Valor']],
-                body: [['PIX',`R$ ${tPix.toFixed(2)}`],['DINHEIRO',`R$ ${tDin.toFixed(2)}`],['CRÉDITO',`R$ ${tCre.toFixed(2)}`],['TOTAL',`R$ ${(tPix+tDin+tCre).toFixed(2)}`]],
-                headStyles: {fillColor: [46, 204, 113]}
-            });
-
-            doc.save(`Financeiro_${dataF.replace(/\//g, '-')}.pdf`);
+            doc.save(`financeiro_${dataF}.pdf`);
         }
 
         function enviarWhatsApp() {
             if (timesAtuais.length === 0) return alert("Sorteie primeiro!");
-            let msg = `*SORTEIO PELADEIROS*\n\n`;
+            const dataH = new Date().toLocaleDateString('pt-BR');
+            const horaH = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+            
+            let msg = `*⚽ SORTEIO PELADEIROS - ${dataH}*\n_Gerado às ${horaH}_\n\n`;
             timesAtuais.forEach(t => {
-                msg += `*${t.nome.toUpperCase()}*\n${t.membros.map(m => '• ' + m).join('\n')}\n\n`;
+                const mediaIdade = t.contaIdade > 0 ? (t.somaIdade / t.contaIdade).toFixed(1) : "---";
+                const forcaMedia = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
+                msg += `*${t.nome}* (⭐ ${forcaMedia} | 🎂 ${mediaIdade})\n${t.membros.map(m => '• ' + m).join('\n')}\n\n`;
             });
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
