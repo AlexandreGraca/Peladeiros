@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Peladeiros - Gestão Premium</title>
+    <title>Gestão Peladeiros - 2026</title>
 
     <!-- Firebase & Bibliotecas -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -20,103 +21,200 @@
             --waiting: #3498db;
         }
 
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 10px; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        
-        header { text-align: center; margin-bottom: 20px; position: relative; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .logo { max-width: 60px; border-radius: 50%; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 10px;
+        }
 
-        .search-box { display: flex; gap: 8px; margin-bottom: 20px; }
-        .search-box input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; }
-        .btn-add { background: var(--primary); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
 
-        h3 { font-size: 0.8rem; margin: 15px 0 5px; text-transform: uppercase; color: #7f8c8d; }
-        .player-list { list-style: none; padding: 0; }
-        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            position: relative;
+        }
+
+        .logo {
+            max-width: 60px;
+            border-radius: 50%;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
         .player-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px; margin-bottom: 5px; border-radius: 8px; cursor: pointer;
-            border: 1px solid #eee; transition: 0.2s;
-        }
-        .bg-confirmado { background: #e8f5e9; border-left: 5px solid var(--accent); }
-        .bg-espera { background: #fff; border-left: 5px solid #bdc3c7; }
-
-        .player-info strong { display: block; color: var(--primary); }
-        .player-info span { font-size: 0.7rem; color: #999; }
-        .player-total { font-weight: bold; color: var(--accent); margin-right: 10px; }
-
-        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        .btn-action { padding: 12px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 0.8rem; }
-        .btn-whatsapp-send { background: #25d366; grid-column: span 2; }
-        .btn-pdf { background: var(--danger); }
-        .btn-draw { background: var(--waiting); }
-        .btn-clear { background: #95a5a6; grid-column: span 2; margin-top: 5px; }
-
-        .modal { 
-            display: none; position: fixed; z-index: 999; 
-            left: 0; top: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); align-items: center; justify-content: center; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid #eee;
+            transition: 0.2s;
         }
 
-        .modal-content { 
-            background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; 
-            display: flex; flex-direction: column; gap: 5px;
+        .bg-confirmado {
+            background: #e8f5e9;
+            border-left: 5px solid var(--accent);
         }
 
-        .auth-input { width: 100%; padding: 10px; margin: 5px 0 12px 0; border: 1px solid #ddd; border-radius: 8px; }
-        .modal-row { display: flex; gap: 10px; }
-        .modal-row > div { flex: 1; }
+        .bg-espera {
+            background: #fff;
+            border-left: 5px solid #bdc3c7;
+        }
 
-        .btn-save {
-            background: var(--accent); color: white; border: none; padding: 15px;
-            border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem;
-            width: 100%; margin-top: 10px;
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-action {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-whatsapp-send {
+            background: #25d366;
+            grid-column: span 2;
+        }
+
+        .btn-pdf {
+            background: var(--danger);
+        }
+
+        .btn-draw {
+            background: var(--waiting);
+        }
+
+        .btn-clear {
+            background: #95a5a6;
+            grid-column: span 2;
+            margin-top: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
         }
 
         .card-time {
-            padding: 15px; margin: 10px 0; border-radius: 8px; background: #fff; 
-            border: 1px solid #ddd; position: relative;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: #fff;
+            border: 1px solid #ddd;
         }
-        .stats-badge {
-            font-size: 0.65rem; background: #f0f2f5; padding: 2px 8px; border-radius: 10px; color: #555; margin-right: 5px;
+
+        .badge-info {
+            font-size: 0.7rem;
+            background: #eee;
+            padding: 3px 8px;
+            border-radius: 10px;
+            color: #555;
+            font-weight: bold;
+            margin-right: 4px;
         }
     </style>
 </head>
+
 <body>
 
-    <div id="auth-container" style="height:100vh; display:flex; align-items:center; justify-content:center; background:#1a1a1a;">
-        <div style="background:white; padding:30px; border-radius:12px; text-align:center; width:300px;">
-            <img src="https://i.imgur.com/zSl9YOk.jpeg" style="width:60px; border-radius:50%;">
-            <h2>Peladeiros</h2>
-            <button onclick="loginGoogle()" style="padding:12px; width:100%; cursor:pointer; border-radius: 8px; border: 1px solid #ccc; background: white; font-weight: bold;">
-                Entrar com Google
-            </button>
-        </div>
+    <div id="auth-container"
+        style="height:100vh; display:flex; align-items:center; justify-content:center; background:#1a1a1a;">
+        <button onclick="loginGoogle()"
+            style="padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">Entrar com Google</button>
     </div>
 
     <div id="app-main" class="container" style="display:none;">
         <header>
-            <button onclick="logout()" style="position:absolute; right:0; top:0; font-size:0.6rem; background:none; border:none; color:red; cursor:pointer;">Sair</button>
             <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
-            <h1 style="font-size: 1.2rem;">⚽ Gestão de Pelada ⚽</h1>
-            <p id="data-topo" style="font-size:0.8rem; color:#7f8c8d;"></p>
+            <h1 style="font-size: 1.2rem; margin: 5px 0;">⚽ Peladeiros ⚽</h1>
+            <button onclick="logout()"
+                style="position:absolute; right:0; top:0; background:none; border:none; color:red; cursor:pointer; font-size:0.7rem;">Sair</button>
         </header>
 
         <div class="search-box">
-            <input type="text" id="inNome" placeholder="Novo jogador...">
+            <input type="text" id="inNome" placeholder="Nome do novo jogador...">
             <button class="btn-add" onclick="cadastrarNovo()">+</button>
         </div>
 
         <h3 id="tituloConfirmados">Confirmados (0)</h3>
-        <ul class="player-list" id="listaConfirmados"></ul>
+        <ul id="listaConfirmados" style="list-style:none; padding:0;"></ul>
 
         <h3 id="tituloEspera">Lista de Espera / Cadastro (0)</h3>
-        <ul class="player-list" id="listaEspera"></ul>
+        <ul id="listaEspera" style="list-style:none; padding:0;"></ul>
 
         <div class="actions">
             <button class="btn-action btn-draw" onclick="sortear()">Sortear Times</button>
             <button class="btn-action btn-pdf" onclick="gerarPDF()">Relatório PDF</button>
-            <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">Enviar Times (WhatsApp)</button>
+            <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">Enviar Times WhatsApp</button>
             <button class="btn-action btn-clear" onclick="limparPagamentos()">🔄 Zerar Caixa do Dia</button>
         </div>
         <div id="times"></div>
@@ -125,105 +223,71 @@
     <!-- Modal Edição -->
     <div class="modal" id="modalPagamento">
         <div class="modal-content">
-            <h3 style="margin-top:0; color:var(--primary);">DADOS DO JOGADOR</h3>
+            <h3 style="margin:0">Dados do Jogador</h3>
             <input type="hidden" id="editId">
-            
-            <label style="font-size:0.6rem; font-weight:bold;">NOME</label>
-            <input type="text" id="m-nome" class="auth-input">
+            <input type="text" id="m-nome" class="auth-input" placeholder="Nome">
+            <input type="date" id="m-nasc" class="auth-input">
 
-            <div class="modal-row">
-                <div>
-                    <label style="font-size:0.6rem; font-weight:bold;">NASCIMENTO</label>
-                    <input type="date" id="m-nasc" class="auth-input">
-                </div>
-                <div>
-                    <label style="font-size:0.6rem; font-weight:bold;">HABILIDADE</label>
-                    <select id="m-nivel" class="auth-input">
-                        <option value="5">5 - Craque</option>
-                        <option value="4">4 - Bom</option>
-                        <option value="3">3 - Médio</option>
-                        <option value="2">2 - Esforçado</option>
-                        <option value="1">1 - Perna de Pau</option>
-                    </select>
-                </div>
-            </div>
+            <select id="m-nivel" class="auth-input">
+                <option value="1">⭐ (Perna de Pau)</option>
+                <option value="2">⭐⭐ (Esforçado)</option>
+                <option value="3">⭐⭐⭐ (Médio)</option>
+                <option value="4">⭐⭐⭐⭐ (Bom)</option>
+                <option value="5">⭐⭐⭐⭐⭐ (Craque)</option>
+            </select>
 
-            <div style="background:#f9f9f9; padding:12px; border-radius:12px; border: 1px solid #eee;">
-                <label style="font-size:0.6rem; font-weight:bold;">PAGAMENTO 1</label>
-                <div class="modal-row">
-                    <input type="number" id="m-valor" class="auth-input" placeholder="R$ 0.00">
+            <div style="background:#f9f9f9; padding:10px; border-radius:10px; border:1px solid #eee;">
+                <label style="font-size:0.7rem; font-weight:bold;">Pagamento 1</label>
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <input type="number" id="m-valor" class="auth-input" placeholder="0.00">
                     <select id="m-forma" class="auth-input">
                         <option value="Pix">Pix</option>
                         <option value="Dinheiro">Dinheiro</option>
                         <option value="Crédito">Crédito</option>
                     </select>
                 </div>
-
-                <label style="font-size:0.6rem; font-weight:bold;">PAGAMENTO 2</label>
-                <div class="modal-row">
-                    <input type="number" id="m-valor2" class="auth-input" placeholder="R$ 0.00">
+                <label style="font-size:0.7rem; font-weight:bold;">Pagamento 2</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="number" id="m-valor2" class="auth-input" placeholder="0.00">
                     <select id="m-forma2" class="auth-input">
-                        <option value="">Nenhum</option>
+                        <option value="">-</option>
                         <option value="Pix">Pix</option>
                         <option value="Dinheiro">Dinheiro</option>
                         <option value="Crédito">Crédito</option>
                     </select>
                 </div>
-
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <input type="checkbox" id="m-goleiro">
-                    <label style="font-size:0.8rem; font-weight:bold;">Goleiro Fixo</label>
+                <div style="margin-top:10px;">
+                    <input type="checkbox" id="m-goleiro"> Goleiro Fixo
                 </div>
             </div>
 
-            <button class="btn-save" onclick="salvarTudo()">Confirmar e Salvar</button>
-            <button onclick="fecharModal()" style="background:none; border:none; color:#7f8c8d; cursor:pointer; margin-top:10px;">Cancelar</button>
+            <button onclick="salvarTudo()"
+                style="background:var(--accent); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">SALVAR
+                ALTERAÇÕES</button>
+            <button onclick="excluirJogador()"
+                style="background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">🗑️
+                EXCLUIR DO BANCO</button>
+            <button onclick="fecharModal()"
+                style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
         </div>
     </div>
 
     <script>
-        // Configuração Firebase (Mantida conforme seu original)
-        const firebaseConfig = {
-            apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
-            authDomain: "dbpeladeiros.firebaseapp.com",
-            projectId: "dbpeladeiros",
-            storageBucket: "dbpeladeiros.firebasestorage.app",
-            messagingSenderId: "460398325975",
-            appId: "1:460398325975:web:b382791c2d132d1a3d0092"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY", authDomain: "dbpeladeiros.firebaseapp.com", projectId: "dbpeladeiros", storageBucket: "dbpeladeiros.firebasestorage.app", messagingSenderId: "460398325975", appId: "1:460398325975:web:b382791c2d132d1a3d0092" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        let listaJogadores = []; 
-        let timesAtuais = [];
+        let listaJogadores = []; let timesAtuais = [];
 
-        function loginGoogle() { const p = new firebase.auth.GoogleAuthProvider(); firebase.auth().signInWithPopup(p); }
-        function logout() { firebase.auth().signOut(); }
+        function loginGoogle() { firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+        function logout() { firebase.auth().signOut(); window.location.reload(); }
 
         firebase.auth().onAuthStateChanged(u => {
-            if (u) {
-                document.getElementById('auth-container').style.display = 'none';
-                document.getElementById('app-main').style.display = 'block';
-                document.getElementById('data-topo').innerText = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
-                ouvirBanco();
-            } else {
-                document.getElementById('auth-container').style.display = 'flex';
-                document.getElementById('app-main').style.display = 'none';
-            }
+            if (u) { document.getElementById('auth-container').style.display = 'none'; document.getElementById('app-main').style.display = 'block'; ouvirBanco(); }
         });
-
-        function calcularIdade(dataNasc) {
-            if (!dataNasc) return null;
-            const hoje = new Date();
-            const nasc = new Date(dataNasc);
-            let idade = hoje.getFullYear() - nasc.getFullYear();
-            if (hoje.getMonth() < nasc.getMonth() || (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate())) idade--;
-            return idade;
-        }
 
         function ouvirBanco() {
             db.collection("jogadores").orderBy("nome").onSnapshot(snap => {
-                listaJogadores = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                listaJogadores = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderizar();
             });
         }
@@ -231,36 +295,39 @@
         async function cadastrarNovo() {
             const n = document.getElementById('inNome').value.trim();
             if (!n) return;
-            await db.collection("jogadores").add({
-                nome: n, valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, nivel: 3, nascimento: ""
-            });
+            if (listaJogadores.some(j => j.nome.toLowerCase() === n.toLowerCase())) {
+                alert("Erro: Este jogador já está cadastrado!"); return;
+            }
+            await db.collection("jogadores").add({ nome: n, valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, nivel: 3, nascimento: "" });
             document.getElementById('inNome').value = "";
+        }
+
+        function calcularIdade(data) {
+            if (!data) return null;
+            const nasc = new Date(data); const hoje = new Date();
+            let idade = hoje.getFullYear() - nasc.getFullYear();
+            if (hoje.getMonth() < nasc.getMonth() || (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate())) idade--;
+            return idade;
         }
 
         function renderizar() {
             const lc = document.getElementById('listaConfirmados');
             const le = document.getElementById('listaEspera');
             lc.innerHTML = ""; le.innerHTML = "";
-            let qC = 0, qE = 0;
+            let c = 0, e = 0;
 
             listaJogadores.forEach(j => {
+                const total = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
+                const isC = total >= 15 || j.goleiro;
                 const idade = calcularIdade(j.nascimento);
-                const totalPago = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
-                const isConfirmado = totalPago >= 15 || j.goleiro;
-                
-                const html = `
-                    <li class="player-item ${isConfirmado ? 'bg-confirmado' : 'bg-espera'}" onclick="abrirEdicao('${j.id}')">
-                        <div class="player-info">
-                            <strong>${j.nome} ${idade ? '('+idade+'a)' : ''}</strong>
-                            <span>${j.goleiro ? '🧤 Goleiro' : (isConfirmado ? j.forma + ' - ' + j.nivel + '★' : 'Pendente')}</span>
-                        </div>
-                        <div class="player-total">${isConfirmado ? 'R$ '+ totalPago.toFixed(2) : '---'}</div>
-                    </li>
-                `;
-                if (isConfirmado) { lc.innerHTML += html; qC++; } else { le.innerHTML += html; qE++; }
+                const html = `<li class="player-item ${isC ? 'bg-confirmado' : 'bg-espera'}" onclick="abrirEdicao('${j.id}')">
+                    <div><strong>${j.nome}</strong> ${idade ? `(${idade}a)` : ''}</div>
+                    <div style="font-weight:bold; color:var(--accent)">${isC ? 'R$ ' + total.toFixed(2) : '---'}</div>
+                </li>`;
+                if (isC) { lc.innerHTML += html; c++; } else { le.innerHTML += html; e++; }
             });
-            document.getElementById('tituloConfirmados').innerText = `Confirmados (${qC})`;
-            document.getElementById('tituloEspera').innerText = `Cadastro / Espera (${qE})`;
+            document.getElementById('tituloConfirmados').innerText = `Confirmados (${c})`;
+            document.getElementById('tituloEspera').innerText = `Lista de Espera / Cadastro (${e})`;
         }
 
         function abrirEdicao(id) {
@@ -269,9 +336,9 @@
             document.getElementById('m-nome').value = j.nome;
             document.getElementById('m-nasc').value = j.nascimento || "";
             document.getElementById('m-nivel').value = j.nivel || 3;
-            document.getElementById('m-valor').value = j.valorPago || "";
+            document.getElementById('m-valor').value = j.valorPago || 0;
             document.getElementById('m-forma').value = j.forma || "Pix";
-            document.getElementById('m-valor2').value = j.valorPago2 || "";
+            document.getElementById('m-valor2').value = j.valorPago2 || 0;
             document.getElementById('m-forma2').value = j.forma2 || "";
             document.getElementById('m-goleiro').checked = j.goleiro || false;
             document.getElementById('modalPagamento').style.display = 'flex';
@@ -292,149 +359,102 @@
             fecharModal();
         }
 
+        async function excluirJogador() {
+            const id = document.getElementById('editId').value;
+            if (confirm("Deseja EXCLUIR este jogador permanentemente do banco?")) {
+                await db.collection("jogadores").doc(id).delete();
+                fecharModal();
+            }
+        }
+
         function fecharModal() { document.getElementById('modalPagamento').style.display = 'none'; }
 
         async function limparPagamentos() {
-            if (!confirm("Zerar caixa do dia?")) return;
+            if (!confirm("Zerar todos os pagamentos de hoje?")) return;
             const batch = db.batch();
-            listaJogadores.forEach(j => {
-                batch.update(db.collection("jogadores").doc(j.id), { valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false });
-            });
+            listaJogadores.forEach(j => batch.update(db.collection("jogadores").doc(j.id), { valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false }));
             await batch.commit();
         }
 
         function sortear() {
             const ativos = listaJogadores.filter(j => ((parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0)) >= 15 || j.goleiro);
-            if (ativos.length < 5) return alert("Mínimo de 5 jogadores.");
+            if (ativos.length < 14) return alert("Mínimo 14  jogadores confirmados!");
 
-            let qtdTimes = Math.max(2, Math.floor(ativos.length / 6));
-            const goleiros = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
+            const qtdTimes = Math.floor(ativos.length / 5);
+            const cores = ["#27ae60", "#f1c40f", "#e74c3c", "#3498db", "#9b59b6"];
+            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({ nome: `Time ${i + 1}`, cor: cores[i] || '#333', membros: [], somaNivel: 0, idades: [] }));
+
+            const gols = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
             const linha = ativos.filter(j => !j.goleiro).sort((a, b) => b.nivel - a.nivel);
 
-            const cores = [{n:"Verde",c:"#27ae60"},{n:"Amarelo",c:"#f1c40f"},{n:"Vermelho",c:"#e74c3c"},{n:"Azul",c:"#3498db"}];
-            timesAtuais = Array.from({length:qtdTimes},(_,i)=>({nome:cores[i].n, cor:cores[i].c, membros:[], somaNivel:0, somaIdade:0, contaIdade:0}));
-
-            goleiros.forEach((g,i) => { if (i < qtdTimes) { timesAtuais[i].membros.push('🧤 ' + g.nome); const id = calcularIdade(g.nascimento); if(id){timesAtuais[i].somaIdade+=id; timesAtuais[i].contaIdade++;} }});
-
-            linha.forEach(j => {
+            gols.forEach((g, i) => { if (timesAtuais[i]) { timesAtuais[i].membros.push("🧤 " + g.nome); const id = calcularIdade(g.nascimento); if (id) timesAtuais[i].idades.push(id); } });
+            linha.forEach(l => {
                 timesAtuais.sort((a, b) => a.membros.length - b.membros.length || a.somaNivel - b.somaNivel);
-                timesAtuais[0].membros.push('⚽ ' + j.nome);
-                timesAtuais[0].somaNivel += j.nivel;
-                const id = calcularIdade(j.nascimento);
-                if(id){ timesAtuais[0].somaIdade += id; timesAtuais[0].contaIdade++; }
+                timesAtuais[0].membros.push("⚽ " + l.nome);
+                timesAtuais[0].somaNivel += l.nivel;
+                const id = calcularIdade(l.nascimento); if (id) timesAtuais[0].idades.push(id);
             });
 
             const box = document.getElementById('times');
             box.innerHTML = "<h3>Times Sorteados</h3>";
             timesAtuais.forEach(t => {
-                const mediaIdade = t.contaIdade > 0 ? (t.somaIdade / t.contaIdade).toFixed(1) : "---";
-                const forcaMedia = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
-                box.innerHTML += `
-                <div class="card-time" style="border-left: 10px solid ${t.cor}">
+                const medI = t.idades.length ? (t.idades.reduce((a, b) => a + b) / t.idades.length).toFixed(1) : 'N/A';
+                const forca = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
+                box.innerHTML += `<div class="card-time" style="border-left:10px solid ${t.cor}">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <strong style="color:${t.cor}">${t.nome}</strong>
-                        <div>
-                            <span class="stats-badge">🎂 Méd. Idade: ${mediaIdade}</span>
-                            <span class="stats-badge">⭐ Força: ${forcaMedia}</span>
-                        </div>
+                        <div><span class="badge-info">🎂 ${medI}a</span> <span class="badge-info">⭐ ${forca}</span></div>
                     </div>
-                    <div style="margin-top:10px; font-size:0.85rem; line-height:1.4;">${t.membros.join('<br>')}</div>
+                    <div style="margin-top:8px; font-size:0.85rem;">${t.membros.join('<br>')}</div>
                 </div>`;
             });
         }
 
         function gerarPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const dataF = new Date().toLocaleDateString('pt-BR');
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
+            const dataF = new Date().toLocaleDateString('pt-BR');
+            doc.text(`Relatório Financeiro - ${dataF}`, 14, 20);
 
-    // Cabeçalho do documento
-    doc.setFontSize(18);
-    doc.setTextColor(44, 62, 80);
-    doc.text(`Relatório Financeiro - ${dataF}`, 14, 20);
+            let tPix = 0, tDin = 0, tCre = 0, tGer = 0;
+            const body = listaJogadores.filter(j => (j.valorPago + j.valorPago2) > 0).map(j => {
+                const v1 = j.valorPago, v2 = j.valorPago2, f1 = j.forma, f2 = j.forma2;
+                [{ v: v1, f: f1 }, { v: v2, f: f2 }].forEach(p => {
+                    if (p.f === "Pix") tPix += p.v; else if (p.f === "Dinheiro") tDin += p.v; else if (p.f === "Crédito") tCre += p.v;
+                });
+                tGer += (v1 + v2);
+                return [j.nome, f2 ? `${f1}: R$${v1} | ${f2}: R$${v2}` : `${f1}: R$${v1}`, `R$ ${(v1 + v2).toFixed(2)}`];
+            });
 
-    // Variáveis para os totais
-    let totalPix = 0;
-    let totalDinheiro = 0;
-    let totalCredito = 0;
-    let totalGeral = 0;
-
-    // Filtra jogadores com algum pagamento e prepara os dados da tabela
-    const pagantes = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0) > 0);
-    
-    const body = pagantes.map(j => {
-        const v1 = parseFloat(j.valorPago) || 0;
-        const v2 = parseFloat(j.valorPago2) || 0;
-        const f1 = j.forma || "";
-        const f2 = j.forma2 || "";
-        const soma = v1 + v2;
-
-        // Soma para o resumo final
-        [ {v: v1, f: f1}, {v: v2, f: f2} ].forEach(p => {
-            if (p.f === "Pix") totalPix += p.v;
-            else if (p.f === "Dinheiro") totalDinheiro += p.v;
-            else if (p.f === "Crédito") totalCredito += p.v;
-        });
-        totalGeral += soma;
-
-        const detalhe = f2 ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}` : `${f1}: R$${v1.toFixed(2)}`;
-        return [j.nome, detalhe, `R$ ${soma.toFixed(2)}` ];
-    });
-
-    // Primeira Tabela: Lista de Jogadores
-    doc.autoTable({
-        startY: 30,
-        head: [['Jogador', 'Forma de Pagamento', 'Total']],
-        body: body,
-        headStyles: { fillColor: [41, 128, 185] },
-        didDrawCell: (data) => {
-            // Mantém o destaque em vermelho para pagamentos via Crédito
-            if (data.section === 'body' && data.column.index === 1) {
-                const txt = data.cell.text.join(' ');
-                if (txt.includes("Crédito")) {
-                    doc.setTextColor(231, 76, 60); 
-                } else {
-                    doc.setTextColor(44, 62, 80);
+            doc.autoTable({
+                startY: 25, head: [['Jogador', 'Forma de Pagamento', 'Total']], body: body,
+                didParseCell: (data) => {
+                    if (data.section === 'body' && data.column.index === 1 && data.cell.raw.includes("Crédito")) {
+                        data.cell.styles.textColor = [231, 76, 60];
+                        data.cell.styles.fontStyle = 'bold';
+                    }
                 }
-            }
+            });
+
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 10,
+                head: [['Modalidade', 'Resumo']],
+                body: [['PIX', `R$ ${tPix.toFixed(2)}`], ['DINHEIRO', `R$ ${tDin.toFixed(2)}`], ['CRÉDITO', `R$ ${tCre.toFixed(2)}`], ['TOTAL GERAL', `R$ ${tGer.toFixed(2)}`]],
+                theme: 'striped', headStyles: { fillColor: [44, 62, 80] }
+            });
+            doc.save(`Financeiro_Pelada_${dataF}.pdf`);
         }
-    });
 
-    // Segunda Tabela: Resumo de Totais
-    const finalY = doc.lastAutoTable.finalY + 15;
-    doc.setFontSize(14);
-    doc.setTextColor(44, 62, 80);
-    doc.text("Fechamento de Caixa", 14, finalY);
-
-    doc.autoTable({
-        startY: finalY + 5,
-        head: [['Modalidade', 'Valor Acumulado']],
-        body: [
-            ['Total em PIX', `R$ ${totalPix.toFixed(2)}`],
-            ['Total em DINHEIRO', `R$ ${totalDinheiro.toFixed(2)}`],
-            ['Total em CRÉDITO', `R$ ${totalCredito.toFixed(2)}`],
-            [{ content: 'TOTAL GERAL', styles: { fontStyle: 'bold' } }, { content: `R$ ${totalGeral.toFixed(2)}`, styles: { fontStyle: 'bold' } }]
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [39, 174, 96] }, // Verde para o fechamento
-        columnStyles: { 1: { halign: 'right' } }
-    });
-
-    doc.save(`Financeiro_Pelada_${dataF.replace(/\//g, '-')}.pdf`);
-}
         function enviarWhatsApp() {
-            if (timesAtuais.length === 0) return alert("Sorteie primeiro!");
-            const dataH = new Date().toLocaleDateString('pt-BR');
-            const horaH = new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
-            
-            let msg = `*⚽ SORTEIO PELADEIROS - ${dataH}*\n_Gerado às ${horaH}_\n\n`;
+            if (!timesAtuais.length) return alert("Sorteie primeiro!");
+            const agora = new Date();
+            let msg = `*⚽ TIMES SORTEADOS - ${agora.toLocaleDateString()} às ${agora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}*\n\n`;
             timesAtuais.forEach(t => {
-                const mediaIdade = t.contaIdade > 0 ? (t.somaIdade / t.contaIdade).toFixed(1) : "---";
-                const forcaMedia = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
-                msg += `*${t.nome}* (⭐ ${forcaMedia} | 🎂 ${mediaIdade})\n${t.membros.map(m => '• ' + m).join('\n')}\n\n`;
+                const medI = t.idades.length ? (t.idades.reduce((a, b) => a + b) / t.idades.length).toFixed(1) : 'N/A';
+                msg += `*${t.nome.toUpperCase()}* (⭐${(t.somaNivel / t.membros.length).toFixed(1)} | 🎂${medI}a)\n${t.membros.join('\n')}\n\n`;
             });
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
     </script>
 </body>
+
 </html>
