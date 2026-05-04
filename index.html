@@ -114,11 +114,11 @@
                 <div style="flex:1">
                     <label style="font-size:0.7rem; font-weight:bold;">HABILIDADE</label>
                     <select id="m-nivel" class="auth-input">
-                        <option value="5">⭐⭐⭐⭐⭐</option>
-                        <option value="4">⭐⭐⭐⭐</option>
-                        <option value="3" selected>⭐⭐⭐</option>
-                        <option value="2">⭐⭐</option>
-                        <option value="1">⭐</option>
+                        <option value="5">⭐⭐⭐⭐⭐ Craque</option>
+                        <option value="4">⭐⭐⭐⭐ Bom</option>
+                        <option value="3" selected>⭐⭐⭐ Médio</option>
+                        <option value="2">⭐⭐ Esforçado</option>
+                        <option value="1">⭐ Perna de Pau</option>
                     </select>
                 </div>
             </div>
@@ -277,52 +277,180 @@
 
         // Lógica de Sorteio (Igual à anterior, usando o j.nivel)
         function sortear() {
-            const ativos = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) >= 15 || j.goleiro);
-            if (ativos.length < 5) return alert("Poucos jogadores confirmados.");
-            
-            let qtdTimes = Math.max(1, Math.floor(ativos.length / 9));
-            const goleiros = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
-            const linha = ativos.filter(j => !j.goleiro).sort((a,b) => (b.nivel||3) - (a.nivel||3));
+            // Filtra jogadores que pagaram ou são goleiros
+            const ativos = jogadores.filter(j => ((parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)) >= 15 || j.isGoleiro);
+            const totalJogadores = ativos.length;
 
-            timesAtuais = Array.from({length: qtdTimes}, (_, i) => ({
-                nome: `Time ${i+1}`, membros: [], soma: 0
+            if (totalJogadores < 7) {
+                return alert("Mínimo de 7 jogadores para realizar o sorteio.");
+            }
+
+            // Define quantidade de times (baseado em 9 jogadores por time)
+            let qtdTimes = Math.max(1, Math.floor(totalJogadores / 9));
+
+            // Sorteio aleatório de goleiros
+            const goleiros = ativos.filter(j => j.isGoleiro).sort(() => Math.random() - 0.5);
+
+            // Ordena jogadores de linha por NÍVEL (do maior para o menor) e idade como desempate
+            const linha = ativos.filter(j => !j.isGoleiro).sort((a, b) => {
+                const nivelA = parseInt(a.nivel) || 3;
+                const nivelB = parseInt(b.nivel) || 3;
+                if (nivelB !== nivelA) return nivelB - nivelA;
+                return (a.idade || 0) - (b.idade || 0);
+            });
+
+            const configCores = [
+                { nome: "Verde", hex: "#27ae60" },
+                { nome: "Amarelo", hex: "#f1c40f" },
+                { nome: "Vermelho", hex: "#e74c3c" },
+                { nome: "Roxo", hex: "#9b59b6" }
+            ];
+
+            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
+                nome: configCores[i]?.nome || `Time ${i + 1}`,
+                cor: configCores[i]?.hex || "#2c3e50",
+                membros: [],
+                somaNivel: 0
             }));
 
-            goleiros.forEach((g, i) => { if(timesAtuais[i]) timesAtuais[i].membros.push("🧤 " + g.nome); });
-            
-            linha.forEach(j => {
-                timesAtuais.sort((a,b) => a.soma - b.soma);
-                timesAtuais[0].membros.push("⚽ " + j.nome);
-                timesAtuais[0].soma += (j.nivel || 3);
+            const timeLaranja = { nome: "Laranja (Reserva)", cor: "#e67e22", membros: [], somaNivel: 0 };
+
+            // 1. Distribuir Goleiros nos times principais
+            goleiros.forEach((g, i) => {
+                if (i < qtdTimes) {
+                    timesAtuais[i].membros.push('🧤 ' + g.nome);
+                } else {
+                    timeLaranja.membros.push('🧤 ' + g.nome);
+                }
             });
 
+            // 2. Distribuir Linha com lógica de equilíbrio técnico
+            linha.forEach((j, index) => {
+                // Encontra os times que ainda têm vaga (menos de 9 jogadores)
+                const timesComVaga = timesAtuais.filter(t => t.membros.length < 9);
+
+                if (timesComVaga.length > 0) {
+                    // Ordena os times: o que tem MENOR soma de nível recebe o jogador atual
+                    timesComVaga.sort((a, b) => a.somaNivel - b.somaNivel);
+
+                    timesComVaga[0].membros.push('⚽ ' + j.nome);
+                    timesComVaga[0].somaNivel += (parseInt(j.nivel) || 3);
+                } else {
+                    // Se todos cheios, vai para o Laranja
+                    timeLaranja.membros.push(j.nome);
+                }
+            });
+
+            if (timeLaranja.membros.length > 0) timesAtuais.push(timeLaranja);
+
+            // 3. Renderizar na tela
             const box = document.getElementById('times');
-            box.innerHTML = "<h3>Times Formados</h3>";
+            box.innerHTML = "<h3 style='margin-top:20px;'>Times Equilibrados</h3>";
+
             timesAtuais.forEach(t => {
-                box.innerHTML += `<div style="padding:10px; border:1px solid #ddd; margin-bottom:5px; border-radius:8px;">
-                    <strong>${t.nome}</strong><br>${t.membros.join('<br>')}
-                </div>`;
+                box.innerHTML += `
+            <div style="padding:15px; margin:10px 0; border-radius:8px; background:#fff; border:1px solid #ddd; border-left:10px solid ${t.cor};">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color:${t.cor};">${t.nome.toUpperCase()}</strong>
+                    <span style="font-size:0.7rem; color:#666;">Força: ${t.somaNivel} | ${t.membros.length} jogadores</span>
+                </div>
+                <div style="margin-top:10px; font-size:0.9rem; line-height:1.6;">
+                    ${t.membros.join('<br>')}
+                </div>
+            </div>`;
             });
         }
-
-        function gerarPDF() {
+       function gerarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.text("Relatório de Caixa - Peladeiros", 10, 10);
-            let y = 20;
-            listaJogadores.filter(j => j.valorPago > 0).forEach(j => {
-                doc.text(`${j.nome}: R$ ${j.valorPago} (${j.forma})`, 10, y);
-                y += 10;
+            const dataF = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
+
+            doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
+
+            // Filtra apenas jogadores confirmados ou goleiros
+            const confirmados = jogadores.filter(j => ((parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)) >= 15 || j.isGoleiro);
+
+            let tPix = 0, tDin = 0, tCre = 0;
+
+            const rows = confirmados.map(j => {
+                // GARANTIA: Converte para número puro, removendo qualquer caractere estranho
+                const v1 = Number(String(j.v1).replace(/[^0-9.-]+/g, "")) || 0;
+                const v2 = Number(String(j.v2).replace(/[^0-9.-]+/g, "")) || 0;
+                const total = v1 + v2;
+
+                const temCredito = (j.p1 === "Crédito" || j.p2 === "Crédito");
+
+                // Soma matemática real para o resumo
+
+                [{ v: v1, p: j.p1 }, { v: v2, p: j.p2 }].forEach(pg => {
+                    // Convertemos a categoria para minúsculo para evitar erro de digitação
+                    const categoria = String(pg.p).toLowerCase().trim();
+
+                    if (categoria.includes("pix")) {
+                        tPix += pg.v;
+                    } else if (categoria.includes("dinheiro")) {
+                        tDin += pg.v;
+                    } else if (categoria.includes("crédito") || categoria.includes("credito")) {
+                        tCre += pg.v;
+                    }
+                });
+
+                return [
+                    j.nome,
+                    j.isGoleiro ? "ISENTO" : `${j.p1}: R$ ${v1.toFixed(2)}`,
+                    (!j.isGoleiro && v2 > 0) ? `${j.p2}: R$ ${v2.toFixed(2)}` : "-",
+                    `R$ ${total.toFixed(2)}`,
+                    temCredito
+                ];
             });
-            doc.save("caixa_pelada.pdf");
+
+            // Tabela de Jogadores
+            doc.autoTable({
+                startY: 25,
+                head: [['Nome', 'Pagamento 1', 'Pagamento 2', 'Total']],
+                body: rows.map(r => r.slice(0, 4)),
+                styles: { font: "helvetica", fontSize: 10 },
+                didParseCell: function (data) {
+                    if (data.section === 'body' && rows[data.row.index][4] === true) {
+                        data.cell.styles.textColor = [231, 76, 60]; // Vermelho para Crédito
+                    }
+                }
+            });
+
+            // Tabela de Resumo (Agora com valores somados corretamente)
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 10,
+                head: [['Resumo Financeiro', 'Valor Total']],
+                body: [
+                    ['PIX', `R$ ${tPix.toFixed(2)}`],
+                    ['DINHEIRO', `R$ ${tDin.toFixed(2)}`],
+                    ['CRÉDITO', `R$ ${tCre.toFixed(2)}`],
+                    ['TOTAL GERAL', `R$ ${(tPix + tDin + tCre).toFixed(2)}`]
+                ],
+                headStyles: { fillColor: [46, 204, 113] }
+            });
+
+            doc.save(`Financeiro_${dataF}.pdf`);
         }
 
-        function enviarWhatsApp() {
+     function enviarWhatsApp() {
             if (timesAtuais.length === 0) return alert("Sorteie primeiro!");
-            let msg = "*ESCALAÇÃO DA PELADA*\n\n";
-            timesAtuais.forEach(t => {
-                msg += `*${t.nome.toUpperCase()}*\n${t.membros.join('\n')}\n\n`;
+
+            // Formata como: "segunda-feira, 30/04/26"
+            const dataFormatada = new Date().toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit'
             });
+
+            // Adiciona a data na primeira linha
+            let msg = `SORTEIO PELADEIROS\n ${dataFormatada}\n\n`;
+
+            timesAtuais.forEach(t => {
+                msg += `*${t.nome.toUpperCase()}*\n${t.membros.map(m => '• ' + m).join('\n')}\n\n`;
+            });
+
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
     </script>
