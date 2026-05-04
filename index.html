@@ -344,38 +344,84 @@
         }
 
         function gerarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const dataF = new Date().toLocaleDateString('pt-BR');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const dataF = new Date().toLocaleDateString('pt-BR');
 
-            doc.setFontSize(16);
-            doc.text(`Relatório Financeiro - ${dataF}`, 14, 15);
+    // Cabeçalho do documento
+    doc.setFontSize(18);
+    doc.setTextColor(44, 62, 80);
+    doc.text(`Relatório Financeiro - ${dataF}`, 14, 20);
 
-            const pagantes = listaJogadores.filter(j => (j.valorPago + j.valorPago2) > 0);
-            const rows = pagantes.map(j => {
-                const det = j.forma2 ? `${j.forma}: R$${j.valorPago} | ${j.forma2}: R$${j.valorPago2}` : `${j.forma}: R$${j.valorPago}`;
-                return [j.nome, det, `R$ ${(j.valorPago + j.valorPago2).toFixed(2)}` ];
-            });
+    // Variáveis para os totais
+    let totalPix = 0;
+    let totalDinheiro = 0;
+    let totalCredito = 0;
+    let totalGeral = 0;
 
-            doc.autoTable({
-                startY: 25,
-                head: [['Jogador', 'Forma de Pagamento', 'Total']],
-                body: rows,
-                didDrawCell: (data) => {
-                    // CORREÇÃO: Aplicar vermelho em tempo real se a célula contiver "Crédito"
-                    if (data.section === 'body' && data.column.index === 1) {
-                        const texto = data.cell.text.join(' ');
-                        if (texto.includes("Crédito")) {
-                            doc.setTextColor(231, 76, 60); // Vermelho
-                        } else {
-                            doc.setTextColor(44, 62, 80); // Cor padrão
-                        }
-                    }
+    // Filtra jogadores com algum pagamento e prepara os dados da tabela
+    const pagantes = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0) > 0);
+    
+    const body = pagantes.map(j => {
+        const v1 = parseFloat(j.valorPago) || 0;
+        const v2 = parseFloat(j.valorPago2) || 0;
+        const f1 = j.forma || "";
+        const f2 = j.forma2 || "";
+        const soma = v1 + v2;
+
+        // Soma para o resumo final
+        [ {v: v1, f: f1}, {v: v2, f: f2} ].forEach(p => {
+            if (p.f === "Pix") totalPix += p.v;
+            else if (p.f === "Dinheiro") totalDinheiro += p.v;
+            else if (p.f === "Crédito") totalCredito += p.v;
+        });
+        totalGeral += soma;
+
+        const detalhe = f2 ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}` : `${f1}: R$${v1.toFixed(2)}`;
+        return [j.nome, detalhe, `R$ ${soma.toFixed(2)}` ];
+    });
+
+    // Primeira Tabela: Lista de Jogadores
+    doc.autoTable({
+        startY: 30,
+        head: [['Jogador', 'Forma de Pagamento', 'Total']],
+        body: body,
+        headStyles: { fillColor: [41, 128, 185] },
+        didDrawCell: (data) => {
+            // Mantém o destaque em vermelho para pagamentos via Crédito
+            if (data.section === 'body' && data.column.index === 1) {
+                const txt = data.cell.text.join(' ');
+                if (txt.includes("Crédito")) {
+                    doc.setTextColor(231, 76, 60); 
+                } else {
+                    doc.setTextColor(44, 62, 80);
                 }
-            });
-            doc.save(`financeiro_${dataF}.pdf`);
+            }
         }
+    });
 
+    // Segunda Tabela: Resumo de Totais
+    const finalY = doc.lastAutoTable.finalY + 15;
+    doc.setFontSize(14);
+    doc.setTextColor(44, 62, 80);
+    doc.text("Fechamento de Caixa", 14, finalY);
+
+    doc.autoTable({
+        startY: finalY + 5,
+        head: [['Modalidade', 'Valor Acumulado']],
+        body: [
+            ['Total em PIX', `R$ ${totalPix.toFixed(2)}`],
+            ['Total em DINHEIRO', `R$ ${totalDinheiro.toFixed(2)}`],
+            ['Total em CRÉDITO', `R$ ${totalCredito.toFixed(2)}`],
+            [{ content: 'TOTAL GERAL', styles: { fontStyle: 'bold' } }, { content: `R$ ${totalGeral.toFixed(2)}`, styles: { fontStyle: 'bold' } }]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [39, 174, 96] }, // Verde para o fechamento
+        columnStyles: { 1: { halign: 'right' } }
+    });
+
+    doc.save(`Financeiro_Pelada_${dataF.replace(/\//g, '-')}.pdf`);
+}
         function enviarWhatsApp() {
             if (timesAtuais.length === 0) return alert("Sorteie primeiro!");
             const dataH = new Date().toLocaleDateString('pt-BR');
