@@ -1,671 +1,264 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Peladeiros</title>
+    <title>Peladeiros - Gestão de Jogo</title>
 
+    <!-- Firebase e Bibliotecas -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
     <style>
         :root {
             --primary: #2c3e50;
-            --secondary: #34495e;
             --accent: #27ae60;
             --danger: #e74c3c;
             --waiting: #3498db;
-            --goleiro: #f39c12;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 10px; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .logo { max-width: 50px; border-radius: 50%; }
+
+        /* Estilo das Listas */
+        .section-title { font-size: 0.9rem; color: #7f8c8d; text-transform: uppercase; margin: 20px 0 10px; display: flex; justify-content: space-between; }
+        .player-list { list-style: none; padding: 0; }
+        
+        .player-card {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; margin-bottom: 8px; border-radius: 8px;
+            cursor: pointer; transition: 0.2s; border: 1px solid #eee;
         }
 
-        body {
-            background-color: #f0f2f5;
-        }
+        /* Cores Dinâmicas */
+        .confirmado { background: #e8f5e9; border-left: 5px solid var(--accent); }
+        .espera { background: #fff; border-left: 5px solid #bdc3c7; }
+        .goleiro-tag { background: #f39c12; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; margin-left: 5px; }
 
-        #auth-container {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #1a1a1a;
-        }
+        .player-info strong { display: block; font-size: 1rem; color: var(--primary); }
+        .player-info span { font-size: 0.75rem; color: #7f8c8d; }
+        .price-tag { font-weight: bold; color: var(--accent); }
 
-        .login-card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 350px;
-            text-align: center;
-        }
+        /* Botão de Adicionar */
+        .add-box { display: flex; gap: 5px; margin-bottom: 20px; }
+        .add-box input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; }
 
-        .auth-input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
+        /* Modal */
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); align-items:center; justify-content:center; z-index:100; }
+        .modal-content { background:white; padding:20px; border-radius:12px; width:90%; max-width:380px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display:block; font-size: 0.75rem; font-weight:bold; margin-bottom:5px; }
+        .input-group input, .input-group select { width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; }
 
-        .btn-auth {
-            width: 100%;
-            padding: 12px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        #app-main {
-            display: none;
-            max-width: 600px;
-            margin: 20px auto;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-            position: relative;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .btn-logout {
-            position: absolute;
-            right: 0;
-            top: 0;
-            background: none;
-            border: none;
-            color: #999;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-
-        .logo {
-            max-width: 60px;
-            border-radius: 50%;
-        }
-
-        .search-box {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
-
-        .search-box input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-        }
-
-        .btn-add {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        h3 {
-            font-size: 0.8rem;
-            margin: 15px 0 5px;
-            text-transform: uppercase;
-            color: #7f8c8d;
-        }
-
-        .player-list {
-            list-style: none;
-        }
-
-        .player-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #f9f9f9;
-        }
-
-        .player-info {
-            cursor: pointer;
-            flex: 1;
-        }
-
-        .player-info strong {
-            display: block;
-            color: var(--primary);
-        }
-
-        .player-info span {
-            font-size: 0.7rem;
-            color: #999;
-        }
-
-        .player-total {
-            font-weight: bold;
-            color: var(--accent);
-            margin-right: 10px;
-        }
-
-        .actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .btn-action {
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        .btn-whatsapp-send {
-            background: #25d366;
-            grid-column: span 2;
-        }
-
-        .btn-pdf {
-            background: var(--danger);
-        }
-
-        .btn-import {
-            background: var(--secondary);
-        }
-
-        .btn-draw {
-            background: var(--waiting);
-        }
-
-        .btn-clear {
-            background: #95a5a6;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-row {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-
-        .modal-row input {
-            flex: 1;
-        }
-
-        .modal-row select {
-            flex: 1;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            padding: 10px;
-        }
-
-        .bg-confirmado {
-            background-color: #e8f5e9 !important;
-            border-left: 5px solid #27ae60;
-            margin-bottom: 5px;
-            padding-left: 10px !important;
-            border-radius: 8px;
-        }
-
-        .bg-espera {
-            background-color: #ffebee !important;
-            border-left: 5px solid #e74c3c;
-            margin-bottom: 5px;
-            padding-left: 10px !important;
-            border-radius: 8px;
-        }
+        .btn-save { width:100%; padding:12px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+        .btn-cancel { width:100%; padding:8px; background:#eee; color:#666; border:none; border-radius:8px; margin-top:10px; cursor:pointer; }
+        .btn-reset { width:100%; padding:10px; background:var(--danger); color:white; border:none; border-radius:8px; margin-top:20px; font-weight:bold; }
+        
+        #auth-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: #222; }
     </style>
 </head>
-
 <body>
 
-    <div id="auth-container">
-        <div class="login-card">
-            <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
-            <h2>Sorteio Peladeiros</h2>
-            <h4>⚽ Desde 1982 🍻🍖</h4>
-            <h6>Futebol & Resenha</h6>
-            <h3>Login</h3>
-            <p style="margin-bottom: 20px; color: #666;">Acesso Restrito</p>
-
-            <button class="btn-auth" onclick="loginGoogle()"
-                style="display: flex; align-items: center; justify-content: center; gap: 10px; background: white; color: #444; border: 1px solid #ddd;">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
-                Entrar com Google
-            </button>
-
-            <p id="error-login" style="color:red; font-size:0.8rem; margin-top:10px; display:none;"></p>
+    <!-- Tela de Login -->
+    <div id="auth-screen">
+        <div style="background:white; padding:30px; border-radius:15px; text-align:center;">
+            <img src="https://i.imgur.com/zSl9YOk.jpeg" style="width:80px; border-radius:50%">
+            <h2>Peladeiros</h2>
+            <button onclick="loginGoogle()" style="padding:10px 20px; cursor:pointer;">Entrar com Google</button>
         </div>
     </div>
 
-    <div id="app-main">
+    <!-- App Principal -->
+    <div id="app-main" class="container" style="display:none;">
         <header>
-            <button class="btn-logout" onclick="logout()">Sair</button>
             <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
-            <h1 style="font-size: 1.3rem; margin-bottom: 2px;">⚽ Sorteio ⚽</h1>
-            <p id="data-topo" style="font-size: 0.85rem; color: #7f8c8d; font-weight: bold;"></p>
+            <h2 style="margin:5px 0 0;">Controle de Caixa</h2>
+            <p id="data-atual" style="font-size:0.8rem; color:#666;"></p>
         </header>
 
-        <div class="search-box">
-            <input type="text" id="inNome" placeholder="Novo jogador...">
-            <button class="btn-add" onclick="abrirNovo()">+</button>
+        <div class="add-box">
+            <input type="text" id="novoNome" placeholder="Nome do novo jogador...">
+            <button class="btn-add" onclick="cadastrarNovo()">ADD</button>
         </div>
 
-        <h3 id="tituloConfirmados">Confirmados (0)</h3>
-        <ul class="player-list" id="listaPagantes"></ul>
-
-        <h3 id="tituloEspera">Lista de Espera (0)</h3>
-        <ul class="player-list" id="listaEspera"></ul>
-
-        <div class="actions">
-            <button class="btn-action btn-import" onclick="importarWhatsApp()">Importar WhatsApp</button>
-            <button class="btn-action btn-draw" onclick="sortear()">Sortear Times</button>
-            <button class="btn-action btn-pdf" onclick="gerarPDF()">Relatório PDF</button>
-            <button class="btn-action btn-clear" onclick="limparTudo()">Zerar Lista</button>
-            <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">Enviar WhatsApp</button>
+        <div class="section-title">
+            <span>Confirmados (Pagos)</span>
+            <span id="count-confirmados" style="color:var(--accent)">0</span>
         </div>
-        <div id="times"></div>
+        <ul id="listaConfirmados" class="player-list"></ul>
+
+        <div class="section-title">
+            <span>Lista de Espera (Cadastrados)</span>
+            <span id="count-espera">0</span>
+        </div>
+        <ul id="listaEspera" class="player-list"></ul>
+
+        <button class="btn-reset" onclick="zerarPagamentosDia()">🔄 Zerar Pagamentos do Dia</button>
+        <p style="font-size:0.6rem; text-align:center; margin-top:10px; color:#999;">* Zerar apenas limpa os valores, mantém os nomes no banco.</p>
     </div>
 
-    <!-- MODAL ÚNICO DE CADASTRO E PAGAMENTO -->
+    <!-- Modal de Pagamento -->
     <div class="modal" id="modalPagamento">
         <div class="modal-content">
-            <h2 id="modalTitulo">Dados do Jogador</h2>
-            <input type="hidden" id="editId">
-
-            <div style="margin-top: 10px;">
-                <label style="font-size: 0.7rem; font-weight: bold;">NOME / APELIDO</label>
-                <input type="text" id="modalNomeInput" class="auth-input" placeholder="Ex: Jefinho">
+            <h3 id="m-nome">Jogador</h3>
+            <input type="hidden" id="m-id">
+            
+            <div class="input-group">
+                <label>VALOR PAGO (R$)</label>
+                <input type="number" id="m-valor" placeholder="Ex: 15" autofocus>
             </div>
 
-            <div class="modal-row">
-                <div style="flex:1">
-                    <label style="font-size: 0.7rem; font-weight: bold;">NASCIMENTO</label>
-                    <input type="date" id="dataNascimento" class="auth-input">
-                </div>
-                <div style="flex:1">
-                    <label style="font-size: 0.7rem; font-weight: bold;">HABILIDADE</label>
-                    <select id="nivelTecnico" class="auth-input">
-                        <option value="5">⭐⭐⭐⭐⭐ (Craque)</option>
-                        <option value="4">⭐⭐⭐⭐ (Bom)</option>
-                        <option value="3" selected>⭐⭐⭐ (Médio)</option>
-                        <option value="2">⭐⭐ (Esforçado)</option>
-                        <option value="1">⭐ (Perna de Pau)</option>
-                    </select>
-                </div>
-            </div>
-
-            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
-
-            <div style="text-align: center; margin: 10px 0;">
-                <p style="font-size: 0.7rem; font-weight: bold; color: var(--primary); margin-bottom: 5px;">QRCODE (PIX)
-                </p>
-                <img src="https://i.imgur.com/5Dz3zDQ.jpeg" alt="QR Code Pix"
-                    style="width: 120px; height: 120px; border: 1px solid #ddd; border-radius: 8px; padding: 5px;">
-            </div>
-
-            <label style="font-size: 0.7rem; font-weight: bold;">PAGAMENTO 1</label>
-            <div class="modal-row">
-                <input type="number" id="val1" class="auth-input" placeholder="Valor">
-                <select id="pag1">
-                    <option value="Pix"> ❖ PIX</option>
-                    <option value="Dinheiro">💲 Dinheiro</option>
-                    <option value="Crédito">💳 Crédito</option>
+            <div class="input-group">
+                <label>FORMA DE PAGAMENTO</label>
+                <select id="m-forma">
+                    <option value="Pix">❖ PIX</option>
+                    <option value="Dinheiro">💵 Dinheiro</option>
+                    <option value="Mensalista">🗓️ Mensalista</option>
                 </select>
             </div>
 
-            <label style="font-size: 0.7rem; font-weight: bold;">PAGAMENTO 2 (OPCIONAL)</label>
-            <div class="modal-row">
-                <input type="number" id="val2" class="auth-input" placeholder="Valor">
-                <select id="pag2">
-                    <option value="-">-</option>
-                    <option value="Pix"> ❖ PIX</option>
-                    <option value="Dinheiro">💲 Dinheiro</option>
-                    <option value="Crédito">💳 Crédito</option>
-                </select>
+            <div class="input-group" style="display:flex; align-items:center; gap:10px;">
+                <input type="checkbox" id="m-goleiro" style="width:auto;">
+                <label style="margin:0;">É Goleiro?</label>
             </div>
 
-            <button
-                style="width:100%; padding:10px; background:var(--goleiro); color:white; border:none; border-radius:8px; margin-bottom:10px; font-weight:bold; cursor:pointer;"
-                onclick="salvarGoleiro()">🧤 MARCAR COMO GOLEIRO</button>
-
-            <div style="display:flex; gap:10px;">
-                <button style="flex:1; padding:10px; background:#ccc; border:none; border-radius:8px; cursor:pointer;"
-                    onclick="fecharModal()">Cancelar</button>
-                <button
-                    style="flex:1; padding:10px; background:var(--accent); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;"
-                    onclick="salvarPagamento()">Confirmar</button>
-            </div>
+            <button class="btn-save" onclick="confirmarPagamento()">Confirmar e Subir</button>
+            <button class="btn-cancel" onclick="fecharModal()">Voltar</button>
+            <button onclick="excluirJogador()" style="color:red; background:none; border:none; font-size:0.7rem; margin-top:15px; width:100%; cursor:pointer;">Remover Jogador do Banco</button>
         </div>
     </div>
 
     <script>
-        const EMAILS_PERMITIDOS = ["alexandre.gcomp@gmail.com", "jeffinho648@gmail.com", "lacirsmattos@gmail.com"];
+        // CONFIGURAÇÃO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
             authDomain: "dbpeladeiros.firebaseapp.com",
             projectId: "dbpeladeiros",
             storageBucket: "dbpeladeiros.firebasestorage.app",
             messagingSenderId: "460398325975",
-            appId: "1:460398325975:web:b382791c2d132d1a3d0092",
-            measurementId: "G-ZKSZBZWERE"
+            appId: "1:460398325975:web:b382791c2d132d1a3d0092"
         };
-
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const db = firebase.firestore();
-        let jogadores = []; let timesAtuais = [];
 
-        async function loginGoogle() {
+        // Autenticação simples
+        function loginGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                const result = await auth.signInWithPopup(provider);
-                const user = result.user;
-                if (!EMAILS_PERMITIDOS.includes(user.email.toLowerCase())) {
-                    alert("Acesso Negado.");
-                    await auth.signOut();
-                    return;
-                }
-            } catch (error) {
-                alert("Falha na autenticação.");
-            }
+            firebase.auth().signInWithPopup(provider);
         }
 
-        auth.onAuthStateChanged(u => {
-            if (u && EMAILS_PERMITIDOS.includes(u.email.toLowerCase())) {
-                document.getElementById('auth-container').style.display = 'none';
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('app-main').style.display = 'block';
-                carregar();
-            } else {
-                document.getElementById('auth-container').style.display = 'flex';
-                document.getElementById('app-main').style.display = 'none';
+                document.getElementById('data-atual').innerText = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+                ouvirBanco();
             }
         });
 
-        function logout() { auth.signOut(); }
-
-        function carregar() {
-            const elementoData = document.getElementById('data-topo');
-            if (elementoData) {
-                const dataHoje = new Date();
-                const opcoes = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-                elementoData.innerText = dataHoje.toLocaleDateString('pt-BR', opcoes);
-            }
+        // Escuta o banco de dados em tempo real
+        function ouvirBanco() {
             db.collection("jogadores").orderBy("nome").onSnapshot(snap => {
-                jogadores = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderizar();
+                const listaC = document.getElementById('listaConfirmados');
+                const listaE = document.getElementById('listaEspera');
+                listaC.innerHTML = ""; listaE.innerHTML = "";
+                
+                let cCount = 0; let eCount = 0;
+
+                snap.forEach(doc => {
+                    const j = doc.data();
+                    const id = doc.id;
+                    const valor = parseFloat(j.valorPago) || 0;
+                    const isPago = valor >= 15 || j.goleiro === true;
+
+                    const itemHtml = `
+                        <li class="player-card ${isPago ? 'confirmado' : 'espera'}" onclick="abrirModal('${id}', '${j.nome}', ${valor}, ${j.goleiro})">
+                            <div class="player-info">
+                                <strong>${j.nome} ${j.goleiro ? '<span class="goleiro-tag">GK</span>' : ''}</strong>
+                                <span>${isPago ? (j.formaPgto || 'Pago') : 'Aguardando'}</span>
+                            </div>
+                            <div class="price-tag">${isPago ? 'R$ ' + valor : '---'}</div>
+                        </li>
+                    `;
+
+                    if (isPago) {
+                        listaC.innerHTML += itemHtml;
+                        cCount++;
+                    } else {
+                        listaE.innerHTML += itemHtml;
+                        eCount++;
+                    }
+                });
+
+                document.getElementById('count-confirmados').innerText = cCount;
+                document.getElementById('count-espera').innerText = eCount;
             });
         }
 
-        // Função para calcular idade
-        function calcularIdade(dataNasc) {
-            if (!dataNasc) return 0;
-            const hoje = new Date();
-            const nasc = new Date(dataNasc);
-            let idade = hoje.getFullYear() - nasc.getFullYear();
-            const m = hoje.getMonth() - nasc.getMonth();
-            if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
-            return idade;
+        // Cadastra apenas o nome (vai para espera por padrão)
+        async function cadastrarNovo() {
+            const nome = document.getElementById('novoNome').value.trim();
+            if (!nome) return;
+            await db.collection("jogadores").add({
+                nome: nome,
+                valorPago: 0,
+                formaPgto: "",
+                goleiro: false,
+                dataCadastro: new Date()
+            });
+            document.getElementById('novoNome').value = "";
         }
 
-        function abrirNovo() {
-            const n = document.getElementById('inNome').value.trim();
-            if (!n) return;
-
-            document.getElementById('editId').value = "";
-            document.getElementById('modalNomeInput').value = n;
-            document.getElementById('val1').value = "";
-            document.getElementById('val2').value = "";
-            document.getElementById('dataNascimento').value = "";
-            document.getElementById('nivelTecnico').value = "3";
+        // Modal de Alimentação de Dados
+        function abrirModal(id, nome, valor, goleiro) {
+            document.getElementById('m-id').value = id;
+            document.getElementById('m-nome').innerText = nome;
+            document.getElementById('m-valor').value = valor > 0 ? valor : "";
+            document.getElementById('m-goleiro').checked = goleiro || false;
             document.getElementById('modalPagamento').style.display = 'flex';
         }
 
-        async function salvarPagamento() {
-            const id = document.getElementById('editId').value;
-            const nome = document.getElementById('modalNomeInput').value.trim();
-            const dataNasc = document.getElementById('dataNascimento').value;
-            const nivel = parseInt(document.getElementById('nivelTecnico').value) || 3;
+        function fecharModal() { document.getElementById('modalPagamento').style.display = 'none'; }
 
-            const v1 = parseFloat(document.getElementById('val1').value) || 0;
-            const p1 = document.getElementById('pag1').value;
-            const v2 = parseFloat(document.getElementById('val2').value) || 0;
-            const p2 = document.getElementById('pag2').value;
+        // Faz o upgrade do jogador para "Confirmado"
+        async function confirmarPagamento() {
+            const id = document.getElementById('m-id').value;
+            const valor = parseFloat(document.getElementById('m-valor').value) || 0;
+            const forma = document.getElementById('m-forma').value;
+            const goleiro = document.getElementById('m-goleiro').checked;
 
-            if (!nome) return alert("Insira o nome do jogador.");
-
-            const dados = {
-                nome: nome,
-                dataNascimento: dataNasc,
-                idade: calcularIdade(dataNasc),
-                nivel: nivel,
-                v1: v1, p1: p1,
-                v2: v2, p2: p2,
-                isGoleiro: false
-            };
-
-            if (id) await db.collection("jogadores").doc(id).update(dados);
-            else await db.collection("jogadores").add(dados);
-
+            await db.collection("jogadores").doc(id).update({
+                valorPago: valor,
+                formaPgto: forma,
+                goleiro: goleiro
+            });
             fecharModal();
         }
 
-        async function salvarGoleiro() {
-            const id = document.getElementById('editId').value;
-            const nome = document.getElementById('modalNomeInput').value.trim();
-            const dataNasc = document.getElementById('dataNascimento').value;
-            const nivel = parseInt(document.getElementById('nivelTecnico').value) || 3;
-
-            if (!nome) return alert("Insira o nome do jogador.");
-
-            const dados = {
-                nome: nome,
-                dataNascimento: dataNasc,
-                idade: calcularIdade(dataNasc),
-                nivel: nivel,
-                v1: 0, p1: "Pix", v2: 0, p2: "-",
-                isGoleiro: true
-            };
-
-            if (id) await db.collection("jogadores").doc(id).update(dados);
-            else await db.collection("jogadores").add(dados);
-            fecharModal();
-        }
-
-        function renderizar() {
-            const lp = document.getElementById('listaPagantes');
-            const le = document.getElementById('listaEspera');
-            lp.innerHTML = ""; le.innerHTML = "";
-            let qtdC = 0; let qtdE = 0;
-
-            jogadores.forEach(j => {
-                const total = (j.v1 || 0) + (j.v2 || 0);
-                const ok = total >= 15 || j.isGoleiro;
-                const classe = ok ? 'bg-confirmado' : 'bg-espera';
-
-                // Recalcula idade caso tenha mudado o dia
-                const idadeExibida = j.dataNascimento ? calcularIdade(j.dataNascimento) : (j.idade || "");
-
-                let desc = j.isGoleiro ? "🧤 GOLEIRO" : `${j.p1}: R$${j.v1}`;
-                if (!j.isGoleiro && j.v2 > 0) desc += ` | ${j.p2}: R$${j.v2}`;
-                desc += ` | Nível: ${j.nivel || 3}★`;
-
-                const html = `<li class="player-item ${classe}">
-                    <div class="player-info" onclick="abrirEdicao('${j.id}')">
-                        <strong>${j.nome} ${idadeExibida ? '(' + idadeExibida + 'a)' : ''}</strong>
-                        <span>${desc}</span>
-                    </div>
-                    <div style="display:flex; align-items:center;">
-                        <span class="player-total">${j.isGoleiro ? 'OK' : 'R$' + total}</span>
-                        <button onclick="remover('${j.id}')" style="border:none; background:none; color:red; cursor:pointer; padding: 10px;">✕</button>
-                    </div>
-                </li>`;
-
-                if (ok) { lp.innerHTML += html; qtdC++; }
-                else { le.innerHTML += html; qtdE++; }
-            });
-
-            document.getElementById('tituloConfirmados').innerText = `Confirmados (${qtdC})`;
-            document.getElementById('tituloEspera').innerText = `Lista de Espera (${qtdE})`;
-        }
-
-        function abrirEdicao(id) {
-            const j = jogadores.find(x => x.id === id);
-            document.getElementById('editId').value = id;
-            document.getElementById('modalNomeInput').value = j.nome;
-            document.getElementById('dataNascimento').value = j.dataNascimento || "";
-            document.getElementById('nivelTecnico').value = j.nivel || 3;
-            document.getElementById('val1').value = j.v1 || "";
-            document.getElementById('val2').value = j.v2 || "";
-            document.getElementById('modalPagamento').style.display = 'flex';
-        }
-
-        function fecharModal() {
-            document.getElementById('modalPagamento').style.display = 'none';
-            document.getElementById('inNome').value = "";
-        }
-
-        async function remover(id) { if (confirm("Remover?")) await db.collection("jogadores").doc(id).delete(); }
-
-        async function limparTudo() {
-            if (confirm("Zerar lista?")) {
-                const snap = await db.collection("jogadores").get();
-                const b = db.batch(); snap.forEach(d => b.delete(d.ref)); await b.commit();
-                document.getElementById('times').innerHTML = "";
-            }
-        }
-
-        // --- Mantenha suas funções de Sorteio, PDF e WhatsApp como estavam ---
-        // (Apenas certifique-se que o sorteio use 'j.nivel' para o equilíbrio)
-
-        function sortear() {
-            const ativos = jogadores.filter(j => ((parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)) >= 15 || j.isGoleiro);
-            const totalJogadores = ativos.length;
-            if (totalJogadores < 7) return alert("Mínimo de 7 jogadores.");
-
-            let qtdTimes = Math.max(1, Math.floor(totalJogadores / 9));
-            const goleiros = ativos.filter(j => j.isGoleiro).sort(() => Math.random() - 0.5);
-            const linha = ativos.filter(j => !j.isGoleiro).sort((a, b) => (parseInt(b.nivel) || 3) - (parseInt(a.nivel) || 3));
-
-            const configCores = [{ n: "Verde", c: "#27ae60" }, { n: "Amarelo", c: "#f1c40f" }, { n: "Vermelho", c: "#e74c3c" }, { n: "Roxo", c: "#9b59b6" }];
-            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
-                nome: configCores[i]?.n || `Time ${i + 1}`,
-                cor: configCores[i]?.c || "#2c3e50",
-                membros: [], somaNivel: 0
-            }));
-
-            const reserva = { nome: "Laranja (Reserva)", cor: "#e67e22", membros: [], somaNivel: 0 };
-
-            goleiros.forEach((g, i) => {
-                if (i < qtdTimes) timesAtuais[i].membros.push('🧤 ' + g.nome);
-                else reserva.membros.push('🧤 ' + g.nome);
-            });
-
-            linha.forEach(j => {
-                const timesComVaga = timesAtuais.filter(t => t.membros.length < 9);
-                if (timesComVaga.length > 0) {
-                    timesComVaga.sort((a, b) => a.somaNivel - b.somaNivel);
-                    timesComVaga[0].membros.push('⚽ ' + j.nome);
-                    timesComVaga[0].somaNivel += (parseInt(j.nivel) || 3);
-                } else {
-                    reserva.membros.push(j.nome);
-                }
-            });
-
-            if (reserva.membros.length > 0) timesAtuais.push(reserva);
-
-            const box = document.getElementById('times');
-            box.innerHTML = "<h3 style='margin-top:20px;'>Times Equilibrados</h3>";
-            timesAtuais.forEach(t => {
-                box.innerHTML += `
-                    <div style="padding:15px; margin:10px 0; border-radius:8px; background:#fff; border:1px solid #ddd; border-left:10px solid ${t.cor};">
-                        <strong style="color:${t.cor};">${t.nome.toUpperCase()}</strong>
-                        <div style="margin-top:10px; font-size:0.9rem;">${t.membros.join('<br>')}</div>
-                    </div>`;
-            });
-        }
-
-        function gerarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const dataF = new Date().toLocaleDateString('pt-BR').replaceAll('/', '-');
-            doc.text(`Financeiro Peladeiros - ${dataF}`, 14, 15);
-            const confirmados = jogadores.filter(j => ((parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)) >= 15 || j.isGoleiro);
-            const rows = confirmados.map(j => [j.nome, `R$ ${(parseFloat(j.v1) || 0) + (parseFloat(j.v2) || 0)}`, j.isGoleiro ? "SIM" : "NÃO"]);
-            doc.autoTable({ startY: 25, head: [['Nome', 'Total Pago', 'Goleiro']], body: rows });
-            doc.save(`Financeiro_${dataF}.pdf`);
-        }
-
-        function enviarWhatsApp() {
-            if (timesAtuais.length === 0) return alert("Sorteie primeiro!");
-            let msg = `*SORTEIO PELADEIROS*\n\n`;
-            timesAtuais.forEach(t => {
-                msg += `*${t.nome.toUpperCase()}*\n${t.membros.map(m => '• ' + m).join('\n')}\n\n`;
-            });
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
-        }
-
-        async function importarWhatsApp() {
-            const txt = prompt("Cole a lista do WhatsApp:");
-            if (!txt) return;
-            const linhas = txt.split('\n');
+        // Função para o fim do jogo/início de um novo dia
+        async function zerarPagamentosDia() {
+            if (!confirm("Isso vai zerar os pagamentos de todos, mas manterá os nomes cadastrados para o próximo jogo. Confirmar?")) return;
+            
+            const snap = await db.collection("jogadores").get();
             const batch = db.batch();
-            const nomesExistentes = new Set(jogadores.map(j => j.nome.toLowerCase().trim()));
-            linhas.forEach(l => {
-                let n = l.replace(/^[\d\.\s*-]+/, '').trim();
-                if (n.length > 2 && !nomesExistentes.has(n.toLowerCase())) {
-                    const novoRef = db.collection("jogadores").doc();
-                    batch.set(novoRef, { nome: n, v1: 0, p1: "Pix", v2: 0, p2: "-", isGoleiro: false, nivel: 3 });
-                }
+            snap.forEach(doc => {
+                batch.update(doc.ref, { valorPago: 0, formaPgto: "", goleiro: false });
             });
             await batch.commit();
         }
+
+        async function excluirJogador() {
+            if (!confirm("Remover permanentemente do banco?")) return;
+            const id = document.getElementById('m-id').value;
+            await db.collection("jogadores").doc(id).delete();
+            fecharModal();
+        }
     </script>
 </body>
-
 </html>
