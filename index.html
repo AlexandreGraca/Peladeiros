@@ -450,16 +450,16 @@ async function salvarTudo() {
             nome: document.getElementById('m-nome').value,
             nascimento: document.getElementById('m-nasc').value,
             nivel: parseInt(document.getElementById('m-nivel').value),
-            valorPago: parseFloat(document.getElementById('m-valor').value) || 0,
+            valorPago: parseFloat(document.getElementById('m-valor').value) || "",
             forma: document.getElementById('m-forma').value,
-            valorPago2: parseFloat(document.getElementById('m-valor2').value) || 0,
+            valorPago2: parseFloat(document.getElementById('m-valor2').value) || "",
             forma2: document.getElementById('m-forma2').value,
             goleiro: isGoleiro
         });
         fecharModal();
     } catch (error) {
         console.error("Erro ao salvar:", error);
-        alert("Erro ao salvar alterações.");
+        alert("Erro ao Salvar Alterações.");
     }
 }        
 // Decide se zera o pagamento ou deleta o documento
