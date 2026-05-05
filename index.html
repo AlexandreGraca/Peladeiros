@@ -205,7 +205,7 @@
     <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
     <h1 style="font-size: 1.2rem; margin: 5px 0 0 0;">⚽ Sorteio ⚽</h1>
     <!-- Elemento onde a data será exibida -->
-    <p id="data-topo" style="font-size: 0.85rem; color: #7f8c8d; font-weight: bold;"></p>
+    <p id="data-topo" style="font-size: 0.85rem; color: #7f8c8d; font-weight: bold; margin-top: 5px; text-transform: capitalize;"></p>
     
     <button onclick="logout()"
         style="position:absolute; right:0; top:0; background:none; border:none; color:red; cursor:pointer; font-size:0.7rem;">Sair</button>
@@ -225,7 +225,7 @@
         <div class="actions">
             <button class="btn-action btn-draw" onclick="sortear()">🤞 Sortear Times</button>
             <button class="btn-action btn-pdf" onclick="gerarPDF()">📄 Relatório PDF</button>
-            <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">📄 Enviar Times WhatsApp</button>
+            <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">📨 Enviar Times WhatsApp</button>
             <button class="btn-action btn-clear" onclick="limparPagamentos()">🔄 Zerar Caixa do Dia</button>
         </div>
         <div id="times"></div>
@@ -572,6 +572,31 @@ async function acaoExcluirDinamica() {
             });
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
+
+function atualizarData() {
+        const elementoData = document.getElementById('data-topo');
+        const agora = new Date();
+
+        // Opções para formatar a data em português
+        const opcoes = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        };
+
+        // Formata a data: "segunda-feira, 5 de maio de 2026"
+        let dataFormatada = agora.toLocaleDateString('pt-BR', opcoes);
+
+        // Capitalizar a primeira letra
+        dataFormatada = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
+
+        elementoData.textContent = dataFormatada;
+    }
+
+    // Executa a função assim que a página carrega
+    window.onload = atualizarData;
+        
     </script>
 </body>
 
