@@ -264,9 +264,10 @@
             <button onclick="salvarTudo()"
                 style="background:var(--accent); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">SALVAR
                 ALTERAÇÕES</button>
-            <button onclick="excluirJogador()"
-                style="background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">🗑️
-                EXCLUIR DO BANCO</button>
+            <button id="btn-excluir-dinamico" onclick="acaoExcluirDinamica()" 
+    style="background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">
+    🗑️ EXCLUIR
+</button>
             <button onclick="fecharModal()"
                 style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
         </div>
@@ -330,19 +331,62 @@
             document.getElementById('tituloEspera').innerText = `Lista de Espera / Cadastro (${e})`;
         }
 
-        function abrirEdicao(id) {
-            const j = listaJogadores.find(x => x.id === id);
-            document.getElementById('editId').value = id;
-            document.getElementById('m-nome').value = j.nome;
-            document.getElementById('m-nasc').value = j.nascimento || "";
-            document.getElementById('m-nivel').value = j.nivel || 3;
-            document.getElementById('m-valor').value = j.valorPago || "";
-            document.getElementById('m-forma').value = j.forma || "Pix";
-            document.getElementById('m-valor2').value = j.valorPago2 || "";
-            document.getElementById('m-forma2').value = j.forma2 || "";
-            document.getElementById('m-goleiro').checked = j.goleiro || false;
-            document.getElementById('modalPagamento').style.display = 'flex';
+       // Altera o texto do botão ao abrir o modal
+function abrirEdicao(id) {
+    const j = listaJogadores.find(x => x.id === id);
+    const total = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
+    const isConfirmado = total >= 15 || j.goleiro;
+
+    document.getElementById('editId').value = id;
+    document.getElementById('m-nome').value = j.nome;
+    document.getElementById('m-nasc').value = j.nascimento || "";
+    document.getElementById('m-nivel').value = j.nivel || 3;
+    document.getElementById('m-valor').value = j.valorPago || "";
+    document.getElementById('m-forma').value = j.forma || "Pix";
+    document.getElementById('m-valor2').value = j.valorPago2 || "";
+    document.getElementById('m-forma2').value = j.forma2 || "";
+    document.getElementById('m-goleiro').checked = j.goleiro || false;
+
+    // Lógica do Botão Dinâmico
+    const btn = document.getElementById('btn-excluir-dinamico');
+    if (isConfirmado) {
+        btn.innerText = "🚫 REMOVER DOS CONFIRMADOS";
+        btn.style.background = "#f39c12"; // Cor laranja para diferenciar
+    } else {
+        btn.innerText = "🗑️ EXCLUIR DO BANCO";
+        btn.style.background = "var(--danger)";
+    }
+
+    document.getElementById('modalPagamento').style.display = 'flex';
+}
+
+// Decide se zera o pagamento ou deleta o documento
+async function acaoExcluirDinamica() {
+    const id = document.getElementById('editId').value;
+    const j = listaJogadores.find(x => x.id === id);
+    const total = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
+    const isConfirmado = total >= 15 || j.goleiro;
+
+    if (isConfirmado) {
+        // Apenas remove da lista de confirmados zerando os dados de hoje
+        if (confirm(`Remover ${j.nome} da lista de confirmados? (Os valores serão zerados)`)) {
+            await db.collection("jogadores").doc(id).update({
+                valorPago: 0,
+                forma: "",
+                valorPago2: 0,
+                forma2: "",
+                goleiro: false
+            });
+            fecharModal();
         }
+    } else {
+        // Exclui permanentemente do Firebase
+        if (confirm(`Deseja EXCLUIR ${j.nome} permanentemente do banco de dados?`)) {
+            await db.collection("jogadores").doc(id).delete();
+            fecharModal();
+        }
+    }
+}
 
         async function salvarTudo() {
             const id = document.getElementById('editId').value;
