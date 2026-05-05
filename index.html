@@ -263,30 +263,42 @@
             </select>
 
             <div style="background:#f9f9f9; padding:10px; border-radius:10px; border:1px solid #eee;">
-                <label style="font-size:0.7rem; font-weight:bold;">Pagamento 1</label>
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <input type="number" id="m-valor" class="auth-input" placeholder="0.00">
-                    <select id="m-forma" class="auth-input">
-                        <option value="Pix">❖Pix</option>
-                        <option value="Dinheiro">💲Dinheiro</option>
-                        <option value="Crédito">💳Crédito</option>
-                    </select>
-                </div>
-                <label style="font-size:0.7rem; font-weight:bold;">Pagamento 2</label>
-                <div style="display:flex; gap:5px;">
-                    <input type="number" id="m-valor2" class="auth-input" placeholder="0.00">
-                    <select id="m-forma2" class="auth-input">
-                        <option value="">-</option>
-                        <option value="Pix">❖Pix</option>
-                        <option value="Dinheiro">💲Dinheiro</option>
-                        <option value="Crédito">💳Crédito</option>
-                    </select>
-                </div>
-                <div style="margin-top:10px;">
-                    <input type="checkbox" id="m-goleiro"> Goleiro Fixo
-                </div>
-            </div>
+    <!-- QR CODE ADICIONADO AQUI -->
+    <div style="text-align: center; margin-bottom: 15px;">
+        <label style="font-size:0.7rem; font-weight:bold; display:block; margin-bottom:5px;">QR CODE PARA PAGAMENTO</label>
+        <img src="https://i.imgur.com/5Dz3zDQ.jpeg" alt="QR Code Pix" style="width: 120px; border-radius: 8px; border: 1px solid #ddd;">
+    </div>
 
+    <label style="font-size:0.7rem; font-weight:bold;">Pagamento 1</label>
+    <div style="display:flex; gap:5px; margin-bottom:10px;">
+        <input type="number" id="m-valor" class="auth-input" placeholder="0.00">
+        <select id="m-forma" class="auth-input">
+            <option value="Pix">❖Pix</option>
+            <option value="Dinheiro">💲Dinheiro</option>
+            <option value="Crédito">💳Crédito</option>
+        </select>
+    </div>
+    
+    <label style="font-size:0.7rem; font-weight:bold;">Pagamento 2</label>
+    <div style="display:flex; gap:5px;">
+        <input type="number" id="m-valor2" class="auth-input" placeholder="0.00">
+        <select id="m-forma2" class="auth-input">
+            <option value="">-</option>
+            <option value="Pix">❖Pix</option>
+            <option value="Dinheiro">💲Dinheiro</option>
+            <option value="Crédito">💳Crédito</option>
+        </select>
+    </div>
+
+    <!-- BOTÃO GOLEIRO AO INVÉS DE CHECKBOX -->
+    <div style="margin-top:15px;">
+        <input type="hidden" id="m-goleiro-status"> <!-- Campo oculto para guardar o valor -->
+        <button id="btn-goleiro-toggle" onclick="toggleGoleiro()" 
+            style="width:100%; padding:10px; border-radius:8px; border:2px solid #ddd; font-weight:bold; cursor:pointer; transition: 0.3s;">
+            🧤 GOLEIRO FIXO: NÃO
+        </button>
+    </div>
+</div>
             <button onclick="salvarTudo()"
                 style="background:var(--accent); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">SALVAR
                 ALTERAÇÕES</button>
@@ -357,6 +369,27 @@
             document.getElementById('tituloEspera').innerText = `Lista de Espera / Cadastro (${e})`;
         }
 
+function toggleGoleiro() {
+    const btn = document.getElementById('btn-goleiro-toggle');
+    const input = document.getElementById('m-goleiro-status');
+    const isGoleiro = input.value === "true";
+
+    if (isGoleiro) {
+        input.value = "false";
+        btn.innerText = "🧤 GOLEIRO FIXO: NÃO";
+        btn.style.background = "white";
+        btn.style.color = "#333";
+        btn.style.borderColor = "#ddd";
+    } else {
+        input.value = "true";
+        btn.innerText = "🧤 GOLEIRO FIXO: SIM";
+        btn.style.background = "var(--primary)";
+        btn.style.color = "white";
+        btn.style.borderColor = "var(--primary)";
+    }
+}
+        
+
        // Altera o texto do botão ao abrir o modal
 function abrirEdicao(id) {
     const j = listaJogadores.find(x => x.id === id);
@@ -371,21 +404,53 @@ function abrirEdicao(id) {
     document.getElementById('m-forma').value = j.forma || "Pix";
     document.getElementById('m-valor2').value = j.valorPago2 || "";
     document.getElementById('m-forma2').value = j.forma2 || "";
-    document.getElementById('m-goleiro').checked = j.goleiro || false;
-
-    // Lógica do Botão Dinâmico
-    const btn = document.getElementById('btn-excluir-dinamico');
-    if (isConfirmado) {
-        btn.innerText = "🚫 REMOVER DOS CONFIRMADOS";
-        btn.style.background = "#f39c12"; // Cor laranja para diferenciar
+    
+    // Configura o botão de goleiro baseado no dado do banco
+    const inputGoleiro = document.getElementById('m-goleiro-status');
+    inputGoleiro.value = j.goleiro ? "true" : "false";
+    const btnGoleiro = document.getElementById('btn-goleiro-toggle');
+    
+    if (j.goleiro) {
+        btnGoleiro.innerText = "🧤 GOLEIRO FIXO: SIM";
+        btnGoleiro.style.background = "var(--primary)";
+        btnGoleiro.style.color = "white";
+        btnGoleiro.style.borderColor = "var(--primary)";
     } else {
-        btn.innerText = "🗑️ EXCLUIR DO BANCO";
-        btn.style.background = "var(--danger)";
+        btnGoleiro.innerText = "🧤 GOLEIRO FIXO: NÃO";
+        btnGoleiro.style.background = "white";
+        btnGoleiro.style.color = "#333";
+        btnGoleiro.style.borderColor = "#ddd";
+    }
+
+    const btnExcluir = document.getElementById('btn-excluir-dinamico');
+    if (isConfirmado) {
+        btnExcluir.innerText = "🚫 REMOVER DOS CONFIRMADOS";
+        btnExcluir.style.background = "#f39c12";
+    } else {
+        btnExcluir.innerText = "🗑️ EXCLUIR DO BANCO";
+        btnExcluir.style.background = "var(--danger)";
     }
 
     document.getElementById('modalPagamento').style.display = 'flex';
 }
 
+// Atualize a função salvarTudo para pegar o valor do campo oculto
+async function salvarTudo() {
+    const id = document.getElementById('editId').value;
+    const isGoleiro = document.getElementById('m-goleiro-status').value === "true";
+    
+    await db.collection("jogadores").doc(id).update({
+        nome: document.getElementById('m-nome').value,
+        nascimento: document.getElementById('m-nasc').value,
+        nivel: parseInt(document.getElementById('m-nivel').value),
+        valorPago: parseFloat(document.getElementById('m-valor').value) || 0,
+        forma: document.getElementById('m-forma').value,
+        valorPago2: parseFloat(document.getElementById('m-valor2').value) || 0,
+        forma2: document.getElementById('m-forma2').value,
+        goleiro: isGoleiro
+    });
+    fecharModal();
+}
 // Decide se zera o pagamento ou deleta o documento
 async function acaoExcluirDinamica() {
     const id = document.getElementById('editId').value;
