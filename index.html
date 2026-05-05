@@ -352,25 +352,36 @@
         }
 
         function renderizar() {
-            const lc = document.getElementById('listaConfirmados');
-            const le = document.getElementById('listaEspera');
-            lc.innerHTML = ""; le.innerHTML = "";
-            let c = 0, e = 0;
+    const lc = document.getElementById('listaConfirmados');
+    const le = document.getElementById('listaEspera');
+    lc.innerHTML = ""; le.innerHTML = "";
+    let c = 0, e = 0;
 
-            listaJogadores.forEach(j => {
-                const total = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
-                const isC = total >= 15 || j.goleiro;
-                const idade = calcularIdade(j.nascimento);
-                const html = `<li class="player-item ${isC ? 'bg-confirmado' : 'bg-espera'}" onclick="abrirEdicao('${j.id}')">
-                    <div><strong>${j.nome}</strong> ${idade ? `(${idade}a)` : ''}</div>
-                    <div style="font-weight:bold; color:var(--accent)">${isC ? 'R$ ' + total.toFixed(2) : '---'}</div>
-                </li>`;
-                if (isC) { lc.innerHTML += html; c++; } else { le.innerHTML += html; e++; }
-            });
-            document.getElementById('tituloConfirmados').innerText = `Confirmados (${c})`;
-            document.getElementById('tituloEspera').innerText = `Lista de Espera / Cadastro (${e})`;
+    listaJogadores.forEach(j => {
+        const total = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
+        const isC = total >= 15 || j.goleiro;
+        const idade = calcularIdade(j.nascimento);
+        
+        // Adiciona o emoji de luva se for goleiro
+        const prefixoGoleiro = j.goleiro ? "🧤 " : "";
+        
+        const html = `<li class="player-item ${isC ? 'bg-confirmado' : 'bg-espera'}" onclick="abrirEdicao('${j.id}')">
+            <div><strong>${prefixoGoleiro}${j.nome}</strong> ${idade ? `(${idade}a)` : ''}</div>
+            <div style="font-weight:bold; color:var(--accent)">${isC ? 'R$ ' + total.toFixed(2) : '---'}</div>
+        </li>`;
+
+        if (isC) { 
+            lc.innerHTML += html; 
+            c++; 
+        } else { 
+            le.innerHTML += html; 
+            e++; 
         }
-
+    });
+    
+    document.getElementById('tituloConfirmados').innerText = `Confirmados (${c})`;
+    document.getElementById('tituloEspera').innerText = `Lista de Espera / Cadastro (${e})`;
+}
 function toggleGoleiro() {
     const btn = document.getElementById('btn-goleiro-toggle');
     const input = document.getElementById('m-goleiro-status');
