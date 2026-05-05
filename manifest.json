@@ -8,13 +8,25 @@
   "icons": [
     {
       "src": "https://i.imgur.com/zSl9YOk.jpeg",
-      "sizes": "192x192",
-      "type": "image/jpeg"
+      "sizes": "640x640",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://i.imgur.com/zSl9YOk.jpeg",
+      "sizes": "640x640",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Tela Inicial no Celular"
     },
     {
       "src": "https://i.imgur.com/zSl9YOk.jpeg",
-      "sizes": "512x512",
-      "type": "image/jpeg"
+      "sizes": "640x640",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Tela Inicial no Computador"
     }
   ]
 }
