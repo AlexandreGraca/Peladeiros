@@ -229,11 +229,11 @@
             <input type="date" id="m-nasc" class="auth-input">
 
             <select id="m-nivel" class="auth-input">
-                <option value="1">⭐ (Perna de Pau)</option>
-                <option value="2">⭐⭐ (Esforçado)</option>
-                <option value="3">⭐⭐⭐ (Médio)</option>
-                <option value="4">⭐⭐⭐⭐ (Bom)</option>
                 <option value="5">⭐⭐⭐⭐⭐ (Craque)</option>
+                <option value="4">⭐⭐⭐⭐ (Bom)</option>
+                <option value="3" selected>⭐⭐⭐ (Médio)</option>
+                <option value="2">⭐⭐ (Esforçado)</option>
+                <option value="1">⭐ (Perna de Pau)</option>
             </select>
 
             <div style="background:#f9f9f9; padding:10px; border-radius:10px; border:1px solid #eee;">
@@ -241,9 +241,9 @@
                 <div style="display:flex; gap:5px; margin-bottom:10px;">
                     <input type="number" id="m-valor" class="auth-input" placeholder="0.00">
                     <select id="m-forma" class="auth-input">
-                        <option value="Pix">Pix</option>
-                        <option value="Dinheiro">Dinheiro</option>
-                        <option value="Crédito">Crédito</option>
+                        <option value="Pix">❖Pix</option>
+                        <option value="Dinheiro">💲Dinheiro</option>
+                        <option value="Crédito">💳Crédito</option>
                     </select>
                 </div>
                 <label style="font-size:0.7rem; font-weight:bold;">Pagamento 2</label>
@@ -251,9 +251,9 @@
                     <input type="number" id="m-valor2" class="auth-input" placeholder="0.00">
                     <select id="m-forma2" class="auth-input">
                         <option value="">-</option>
-                        <option value="Pix">Pix</option>
-                        <option value="Dinheiro">Dinheiro</option>
-                        <option value="Crédito">Crédito</option>
+                        <option value="Pix">❖Pix</option>
+                        <option value="Dinheiro">💲Dinheiro</option>
+                        <option value="Crédito">💳Crédito</option>
                     </select>
                 </div>
                 <div style="margin-top:10px;">
@@ -336,9 +336,9 @@
             document.getElementById('m-nome').value = j.nome;
             document.getElementById('m-nasc').value = j.nascimento || "";
             document.getElementById('m-nivel').value = j.nivel || 3;
-            document.getElementById('m-valor').value = j.valorPago || 0;
+            document.getElementById('m-valor').value = j.valorPago || "";
             document.getElementById('m-forma').value = j.forma || "Pix";
-            document.getElementById('m-valor2').value = j.valorPago2 || 0;
+            document.getElementById('m-valor2').value = j.valorPago2 || "";
             document.getElementById('m-forma2').value = j.forma2 || "";
             document.getElementById('m-goleiro').checked = j.goleiro || false;
             document.getElementById('modalPagamento').style.display = 'flex';
@@ -378,38 +378,101 @@
 
         function sortear() {
             const ativos = listaJogadores.filter(j => ((parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0)) >= 15 || j.goleiro);
-            if (ativos.length < 14) return alert("Mínimo 14  jogadores confirmados!");
+            const total = ativos.length;
 
-            const qtdTimes = Math.floor(ativos.length / 5);
-            const cores = ["#27ae60", "#f1c40f", "#e74c3c", "#3498db", "#9b59b6"];
-            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({ nome: `Time ${i + 1}`, cor: cores[i] || '#333', membros: [], somaNivel: 0, idades: [] }));
+            if (total < 7) return alert("Mínimo 7 jogadores confirmados para sortear pelo menos 1 time!");
+
+            // Lógica para calcular quantidade de times respeitando o limite de 7 a 9
+            // Se total for 14-18 -> 2 times | 21-27 -> 3 times, etc.
+            // Usamos Math.floor(total / 7) para ver o máximo de times possíveis com pelo menos 7 pessoas
+            let qtdTimes = Math.floor(total / 7);
+            
+            // Mas também não podemos ter mais times do que o limite superior (9 por time)
+            // Se total / qtdTimes > 9, precisamos aumentar o número de times (se possível)
+            if (total / qtdTimes > 9) {
+                qtdTimes = Math.ceil(total / 9);
+            }
+
+            const configTimes = [
+                { nome: "Verde", cor: "#27ae60" },
+                { nome: "Amarelo", cor: "#f1c40f" },
+                { nome: "Vermelho", cor: "#e74c3c" },
+                { nome: "Roxo", cor: "#9b59b6" },
+                { nome: "Laranja", cor: "#e67e22" }
+            ];
+
+            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({ 
+                nome: `Time ${configTimes[i].nome}`, 
+                cor: configTimes[i].cor, 
+                membros: [], 
+                somaNivel: 0, 
+                idades: [] 
+            }));
 
             const gols = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
             const linha = ativos.filter(j => !j.goleiro).sort((a, b) => b.nivel - a.nivel);
 
-            gols.forEach((g, i) => { if (timesAtuais[i]) { timesAtuais[i].membros.push("🧤 " + g.nome); const id = calcularIdade(g.nascimento); if (id) timesAtuais[i].idades.push(id); } });
+            // Distribuir Goleiros
+            gols.forEach((g, i) => { 
+                if (timesAtuais[i % qtdTimes]) { 
+                    timesAtuais[i % qtdTimes].membros.push("🧤 " + g.nome); 
+                    const id = calcularIdade(g.nascimento); 
+                    if (id) timesAtuais[i % qtdTimes].idades.push(id); 
+                } 
+            });
+
+            // Distribuir Linha equilibrando nível e quantidade
             linha.forEach(l => {
                 timesAtuais.sort((a, b) => a.membros.length - b.membros.length || a.somaNivel - b.somaNivel);
                 timesAtuais[0].membros.push("⚽ " + l.nome);
                 timesAtuais[0].somaNivel += l.nivel;
-                const id = calcularIdade(l.nascimento); if (id) timesAtuais[0].idades.push(id);
+                const id = calcularIdade(l.nascimento); 
+                if (id) timesAtuais[0].idades.push(id);
             });
 
             const box = document.getElementById('times');
-            box.innerHTML = "<h3>Times Sorteados</h3>";
+            box.innerHTML = `<h3>Times Sorteados (${total} jogadores)</h3>`;
             timesAtuais.forEach(t => {
                 const medI = t.idades.length ? (t.idades.reduce((a, b) => a + b) / t.idades.length).toFixed(1) : 'N/A';
                 const forca = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
                 box.innerHTML += `<div class="card-time" style="border-left:10px solid ${t.cor}">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <strong style="color:${t.cor}">${t.nome}</strong>
-                        <div><span class="badge-info">🎂 ${medI}a</span> <span class="badge-info">⭐ ${forca}</span></div>
+                        <div>
+                            <span class="badge-info">👥 ${t.membros.length} Jogs</span>
+                            <span class="badge-info">🎂 ${medI}a</span> 
+                            <span class="badge-info">⭐ ${forca}</span>
+                        </div>
                     </div>
                     <div style="margin-top:8px; font-size:0.85rem;">${t.membros.join('<br>')}</div>
                 </div>`;
             });
         }
 
+        function renderizarTimes() {
+            const div = document.getElementById('times');
+            div.innerHTML = "<h2 style='margin-top:20px; text-align:center;'>Equipes Sorteadas</h2>";
+
+            timesAtuais.forEach(t => {
+                let card = `
+            <div style="background:${t.corFundo}; padding:15px; border-radius:12px; margin:15px 0; border-left:8px solid ${t.corBorda}; box-shadow: 0 2px 5px rgba(0,0,0,0.05)">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.1); padding-bottom:5px;">
+                    <strong style="font-size:1.1rem; color:#333;">TIME ${t.nome.toUpperCase()}</strong>
+                    <span style="background:white; padding:2px 8px; border-radius:10px; font-size:0.8rem; font-weight:bold;">
+                        ${t.membros.length} Jogadores
+                    </span>
+                </div>
+                <ul style="margin-top:10px; list-style:none; font-size:0.95rem;">
+                    ${t.membros.map(m => `<li style="padding:3px 0;">• ${m}</li>`).join('')}
+                </ul>
+                <div style="margin-top:8px; font-size:0.7rem; color:#666; text-align:right;">
+                    Força Técnica: ${t.somaNivel} pts
+                </div>
+            </div>`;
+                div.innerHTML += card;
+            });
+        }
+        
         function gerarPDF() {
             const { jsPDF } = window.jspdf; const doc = new jsPDF();
             const dataF = new Date().toLocaleDateString('pt-BR');
@@ -437,7 +500,7 @@
 
             doc.autoTable({
                 startY: doc.lastAutoTable.finalY + 10,
-                head: [['Modalidade', 'Resumo']],
+                head: [['Modalidade', 'Total']],
                 body: [['PIX', `R$ ${tPix.toFixed(2)}`], ['DINHEIRO', `R$ ${tDin.toFixed(2)}`], ['CRÉDITO', `R$ ${tCre.toFixed(2)}`], ['TOTAL GERAL', `R$ ${tGer.toFixed(2)}`]],
                 theme: 'striped', headStyles: { fillColor: [44, 62, 80] }
             });
