@@ -307,7 +307,9 @@
     🗑️ EXCLUIR
 </button>
             <button onclick="fecharModal()"
-                style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
+    style="background:#eee; border:none; color:#666; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:5px;">
+    CANCELAR
+</button>
         </div>
     </div>
 
@@ -383,12 +385,16 @@ function toggleGoleiro() {
     } else {
         input.value = "true";
         btn.innerText = "🧤 GOLEIRO FIXO: SIM";
-        btn.style.background = "var(--primary)";
-        btn.style.color = "white";
-        btn.style.borderColor = "var(--primary)";
-    }
-}
+        // Fundo amarelo como solicitado
+        btn.style.background = "#f1c40f"; 
+        btn.style.color = "#000";
+        btn.style.borderColor = "#f1c40f";
         
+        // Isenção de pagamento automática ao marcar goleiro
+        document.getElementById('m-valor').value = 0;
+        document.getElementById('m-valor2').value = 0;
+    }
+}        
 
        // Altera o texto do botão ao abrir o modal
 function abrirEdicao(id) {
@@ -439,18 +445,23 @@ async function salvarTudo() {
     const id = document.getElementById('editId').value;
     const isGoleiro = document.getElementById('m-goleiro-status').value === "true";
     
-    await db.collection("jogadores").doc(id).update({
-        nome: document.getElementById('m-nome').value,
-        nascimento: document.getElementById('m-nasc').value,
-        nivel: parseInt(document.getElementById('m-nivel').value),
-        valorPago: parseFloat(document.getElementById('m-valor').value) || 0,
-        forma: document.getElementById('m-forma').value,
-        valorPago2: parseFloat(document.getElementById('m-valor2').value) || 0,
-        forma2: document.getElementById('m-forma2').value,
-        goleiro: isGoleiro
-    });
-    fecharModal();
-}
+    try {
+        await db.collection("jogadores").doc(id).update({
+            nome: document.getElementById('m-nome').value,
+            nascimento: document.getElementById('m-nasc').value,
+            nivel: parseInt(document.getElementById('m-nivel').value),
+            valorPago: parseFloat(document.getElementById('m-valor').value) || 0,
+            forma: document.getElementById('m-forma').value,
+            valorPago2: parseFloat(document.getElementById('m-valor2').value) || 0,
+            forma2: document.getElementById('m-forma2').value,
+            goleiro: isGoleiro
+        });
+        fecharModal();
+    } catch (error) {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar alterações.");
+    }
+}        
 // Decide se zera o pagamento ou deleta o documento
 async function acaoExcluirDinamica() {
     const id = document.getElementById('editId').value;
@@ -478,21 +489,6 @@ async function acaoExcluirDinamica() {
         }
     }
 }
-
-        async function salvarTudo() {
-            const id = document.getElementById('editId').value;
-            await db.collection("jogadores").doc(id).update({
-                nome: document.getElementById('m-nome').value,
-                nascimento: document.getElementById('m-nasc').value,
-                nivel: parseInt(document.getElementById('m-nivel').value),
-                valorPago: parseFloat(document.getElementById('m-valor').value) || 0,
-                forma: document.getElementById('m-forma').value,
-                valorPago2: parseFloat(document.getElementById('m-valor2').value) || 0,
-                forma2: document.getElementById('m-forma2').value,
-                goleiro: document.getElementById('m-goleiro').checked
-            });
-            fecharModal();
-        }
 
         async function excluirJogador() {
             const id = document.getElementById('editId').value;
