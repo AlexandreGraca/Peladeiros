@@ -432,78 +432,93 @@ async function acaoExcluirDinamica() {
         }
 
         function sortear() {
-            const ativos = listaJogadores.filter(j => ((parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0)) >= 15 || j.goleiro);
-            const total = ativos.length;
+    const ativos = listaJogadores.filter(j => ((parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0)) >= 15 || j.goleiro);
+    const total = ativos.length;
 
-            if (total < 7) return alert("Mínimo 7 jogadores confirmados para sortear pelo menos 1 time!");
+    if (total < 7) return alert("Mínimo 7 jogadores confirmados para sortear!");
 
-            // Lógica para calcular quantidade de times respeitando o limite de 7 a 9
-            // Se total for 14-18 -> 2 times | 21-27 -> 3 times, etc.
-            // Usamos Math.floor(total / 7) para ver o máximo de times possíveis com pelo menos 7 pessoas
-            let qtdTimes = Math.floor(total / 7);
-            
-            // Mas também não podemos ter mais times do que o limite superior (9 por time)
-            // Se total / qtdTimes > 9, precisamos aumentar o número de times (se possível)
-            if (total / qtdTimes > 9) {
-                qtdTimes = Math.ceil(total / 9);
-            }
+    let qtdTimes = Math.floor(total / 7);
+    if (total / qtdTimes > 9) qtdTimes = Math.ceil(total / 9);
 
-            const configTimes = [
-                { nome: "Verde", cor: "#27ae60" },
-                { nome: "Amarelo", cor: "#f1c40f" },
-                { nome: "Vermelho", cor: "#e74c3c" },
-                { nome: "Roxo", cor: "#9b59b6" },
-                { nome: "Laranja", cor: "#e67e22" }
-            ];
+    const configTimes = [
+        { nome: "Verde", cor: "#27ae60" },
+        { nome: "Amarelo", cor: "#f1c40f" },
+        { nome: "Vermelho", cor: "#e74c3c" },
+        { nome: "Roxo", cor: "#9b59b6" },
+        { nome: "Laranja", cor: "#e67e22" }
+    ];
 
-            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({ 
-                nome: `${configTimes[i].nome}`, 
-                cor: configTimes[i].cor, 
-                membros: [], 
-                somaNivel: 0, 
-                idades: [] 
-            }));
+    timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({ 
+        nome: configTimes[i].nome, 
+        cor: configTimes[i].cor, 
+        membros: [], 
+        somaNivel: 0, 
+        somaIdade: 0,
+        idades: [] 
+    }));
 
-            const gols = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
-            const linha = ativos.filter(j => !j.goleiro).sort((a, b) => b.nivel - a.nivel);
-
-            // Distribuir Goleiros
-            gols.forEach((g, i) => { 
-                if (timesAtuais[i % qtdTimes]) { 
-                    timesAtuais[i % qtdTimes].membros.push("🧤 " + g.nome); 
-                    const id = calcularIdade(g.nascimento); 
-                    if (id) timesAtuais[i % qtdTimes].idades.push(id); 
-                } 
-            });
-
-            // Distribuir Linha equilibrando nível e quantidade
-            linha.forEach(l => {
-                timesAtuais.sort((a, b) => a.membros.length - b.membros.length || a.somaNivel - b.somaNivel);
-                timesAtuais[0].membros.push("⚽ " + l.nome);
-                timesAtuais[0].somaNivel += l.nivel;
-                const id = calcularIdade(l.nascimento); 
-                if (id) timesAtuais[0].idades.push(id);
-            });
-
-            const box = document.getElementById('times');
-            box.innerHTML = `<h3>Times Sorteados (${total} jogadores)</h3>`;
-            timesAtuais.forEach(t => {
-                const medI = t.idades.length ? (t.idades.reduce((a, b) => a + b) / t.idades.length).toFixed(1) : 'N/A';
-                const forca = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
-                box.innerHTML += `<div class="card-time" style="border-left:10px solid ${t.cor}">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <strong style="color:${t.cor}">${t.nome}</strong>
-                        <div>
-                            <span class="badge-info">👥 ${t.membros.length} Jogs</span>
-                            <span class="badge-info">🎂 ${medI}a</span> 
-                            <span class="badge-info">⭐ ${forca}</span>
-                        </div>
-                    </div>
-                    <div style="margin-top:8px; font-size:0.85rem;">${t.membros.join('<br>')}</div>
-                </div>`;
-            });
+    // Separa Goleiros e Linha
+    const gols = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
+    
+    // ORDENAÇÃO POR RANKING (Nível de habilidade como peso principal, Idade como secundário)
+    // Jogadores mais habilidosos e mais velhos ficam no topo para serem distribuídos primeiro
+    const linha = ativos.filter(j => !j.goleiro).sort((a, b) => {
+        if (b.nivel !== a.nivel) {
+            return b.nivel - a.nivel; // Primeiro critério: Habilidade (maior para menor)
         }
+        const idadeA = calcularIdade(a.nascimento) || 30;
+        const idadeB = calcularIdade(b.nascimento) || 30;
+        return idadeB - idadeA; // Segundo critério: Idade (mais velhos primeiro para equilibrar vigor)
+    });
 
+    // 1. Distribuir Goleiros
+    gols.forEach((g, i) => { 
+        const tIdx = i % qtdTimes;
+        timesAtuais[tIdx].membros.push("🧤 " + g.nome); 
+        const id = calcularIdade(g.nascimento); 
+        if (id) {
+            timesAtuais[tIdx].idades.push(id);
+            timesAtuais[tIdx].somaIdade += id;
+        }
+    });
+
+    // 2. Distribuir Linha (Algoritmo de "Serpente" para equilíbrio)
+    linha.forEach(l => {
+        // Ordena os times para dar o jogador ao time que está "mais fraco" no momento
+        // O critério de desempate agora inclui a soma das idades
+        timesAtuais.sort((a, b) => {
+            return (a.membros.length - b.membros.length) || 
+                   (a.somaNivel - b.somaNivel) || 
+                   (a.somaIdade - b.somaIdade);
+        });
+
+        timesAtuais[0].membros.push("⚽ " + l.nome);
+        timesAtuais[0].somaNivel += l.nivel;
+        const id = calcularIdade(l.nascimento) || 30;
+        timesAtuais[0].idades.push(id);
+        timesAtuais[0].somaIdade += id;
+    });
+
+    // Renderização no HTML
+    const box = document.getElementById('times');
+    box.innerHTML = `<h3>Times Sorteados (${total} jogadores)</h3>`;
+    timesAtuais.forEach(t => {
+        const medI = t.idades.length ? (t.somaIdade / t.idades.length).toFixed(1) : 'N/A';
+        const forca = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
+        box.innerHTML += `
+            <div class="card-time" style="border-left:10px solid ${t.cor}">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color:${t.cor}">${t.nome}</strong>
+                    <div>
+                        <span class="badge-info">👥 ${t.membros.length} Jogs</span>
+                        <span class="badge-info">🎂 Méd: ${medI}a</span> 
+                        <span class="badge-info">⭐ Força: ${forca}</span>
+                    </div>
+                </div>
+                <div style="margin-top:8px; font-size:0.85rem;">${t.membros.join('<br>')}</div>
+            </div>`;
+    });
+}
         function renderizarTimes() {
             const div = document.getElementById('times');
             div.innerHTML = "<h2 style='margin-top:20px; text-align:center;'>Equipes Sorteadas</h2>";
