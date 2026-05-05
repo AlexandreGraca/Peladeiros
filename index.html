@@ -187,18 +187,29 @@
 <body>
 
     <div id="auth-container"
-        style="height:100vh; display:flex; align-items:center; justify-content:center; background:#1a1a1a;">
-        <button onclick="loginGoogle()"
-            style="padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">Entrar com Google</button>
-    </div>
+    style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1a1a1a; gap:20px;">
+    
+    <!-- Logo acima do botão -->
+    <img src="https://i.imgur.com/5Dz3zDQ.jpeg" 
+         alt="Logo Peladeiros" 
+         style="max-width: 150px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+
+    <button onclick="loginGoogle()"
+        style="padding:15px 30px; border-radius:8px; font-weight:bold; cursor:pointer; background: white; border: none; font-size: 1rem;">
+        Entrar com Google
+    </button>
+</div>
 
     <div id="app-main" class="container" style="display:none;">
         <header>
-            <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
-            <h1 style="font-size: 1.2rem; margin: 5px 0;">⚽ Peladeiros ⚽</h1>
-            <button onclick="logout()"
-                style="position:absolute; right:0; top:0; background:none; border:none; color:red; cursor:pointer; font-size:0.7rem;">Sair</button>
-        </header>
+    <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
+    <h1 style="font-size: 1.2rem; margin: 5px 0 0 0;">⚽ Sorteio ⚽</h1>
+    <!-- Elemento onde a data será exibida -->
+    <div id="data-atual" style="font-size: 0.8rem; color: #666; margin-bottom: 10px; font-weight: bold;"></div>
+    
+    <button onclick="logout()"
+        style="position:absolute; right:0; top:0; background:none; border:none; color:red; cursor:pointer; font-size:0.7rem;">Sair</button>
+</header>
 
         <div class="search-box">
             <input type="text" id="inNome" placeholder="Nome do novo jogador...">
@@ -212,9 +223,9 @@
         <ul id="listaEspera" style="list-style:none; padding:0;"></ul>
 
         <div class="actions">
-            <button class="btn-action btn-draw" onclick="sortear()">Sortear Times</button>
-            <button class="btn-action btn-pdf" onclick="gerarPDF()">Relatório PDF</button>
-            <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">Enviar Times WhatsApp</button>
+            <button class="btn-action btn-draw" onclick="sortear()">🤞 Sortear Times</button>
+            <button class="btn-action btn-pdf" onclick="gerarPDF()">📄 Relatório PDF</button>
+            <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">📄 Enviar Times WhatsApp</button>
             <button class="btn-action btn-clear" onclick="limparPagamentos()">🔄 Zerar Caixa do Dia</button>
         </div>
         <div id="times"></div>
