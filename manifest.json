@@ -11,12 +11,6 @@
     "sizes": "640x640",
     "type": "image/jpeg",
     "purpose": "any"
-  },
-  {
-    "src": "https://i.imgur.com/zSl9YOk.jpeg",
-    "sizes": "640x640",
-    "type": "image/jpeg",
-    "purpose": "maskable"
   }
 ],
   "screenshots": [
