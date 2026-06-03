@@ -518,14 +518,16 @@ async function acaoExcluirDinamica() {
             await batch.commit();
         }
 
-        function sortear() {
+   function sortear() {
     const ativos = listaJogadores.filter(j => ((parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0)) >= 15 || j.goleiro);
     const total = ativos.length;
 
-    if (total < 7) return alert("Mínimo 7 jogadores confirmados para sortear!");
+    // Ajustado o mínimo para 22 jogadores, já que os times agora são de 11
+    if (total < 22) return alert("Mínimo 22 jogadores confirmados para sortear times de 11!");
 
+    // Define a quantidade de times baseada em 11 jogadores por time
     let qtdTimes = Math.floor(total / 11);
-    if (total / qtdTimes > 11) qtdTimes = Math.ceil(total / 9);
+    if (qtdTimes < 2) qtdTimes = 2; // Garante pelo menos 2 times se houverem jogadores suficientes
 
     const configTimes = [
         { nome: "Verde", cor: "#27ae60" },
@@ -534,6 +536,9 @@ async function acaoExcluirDinamica() {
         { nome: "Roxo", cor: "#9b59b6" },
         { nome: "Laranja", cor: "#e67e22" }
     ];
+
+    // Limita a quantidade de times ao máximo de cores configuradas para não dar undefined
+    if (qtdTimes > configTimes.length) qtdTimes = configTimes.length;
 
     timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({ 
         nome: configTimes[i].nome, 
@@ -548,14 +553,13 @@ async function acaoExcluirDinamica() {
     const gols = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
     
     // ORDENAÇÃO POR RANKING (Nível de habilidade como peso principal, Idade como secundário)
-    // Jogadores mais habilidosos e mais velhos ficam no topo para serem distribuídos primeiro
     const linha = ativos.filter(j => !j.goleiro).sort((a, b) => {
         if (b.nivel !== a.nivel) {
-            return b.nivel - a.nivel; // Primeiro critério: Habilidade (maior para menor)
+            return b.nivel - a.nivel; 
         }
         const idadeA = calcularIdade(a.nascimento) || 30;
         const idadeB = calcularIdade(b.nascimento) || 30;
-        return idadeB - idadeA; // Segundo critério: Idade (mais velhos primeiro para equilibrar vigor)
+        return idadeB - a.nascimento ? idadeB - idadeA : 0;
     });
 
     // 1. Distribuir Goleiros
@@ -571,19 +575,21 @@ async function acaoExcluirDinamica() {
 
     // 2. Distribuir Linha (Algoritmo de "Serpente" para equilíbrio)
     linha.forEach(l => {
-        // Ordena os times para dar o jogador ao time que está "mais fraco" no momento
-        // O critério de desempate agora inclui a soma das idades
+        // Ordena os times para dar o jogador ao time que está com menos membros ou mais fraco
         timesAtuais.sort((a, b) => {
             return (a.membros.length - b.membros.length) || 
                    (a.somaNivel - b.somaNivel) || 
                    (a.somaIdade - b.somaIdade);
         });
 
-        timesAtuais[0].membros.push("⚽ " + l.nome);
-        timesAtuais[0].somaNivel += l.nivel;
-        const id = calcularIdade(l.nascimento) || 30;
-        timesAtuais[0].idades.push(id);
-        timesAtuais[0].somaIdade += id;
+        // Segurança extra: verifica se o time alvo existe antes de empurrar os dados
+        if (timesAtuais[0]) {
+            timesAtuais[0].membros.push("⚽ " + l.nome);
+            timesAtuais[0].somaNivel += l.nivel;
+            const id = calcularIdade(l.nascimento) || 30;
+            timesAtuais[0].idades.push(id);
+            timesAtuais[0].somaIdade += id;
+        }
     });
 
     // Renderização no HTML
