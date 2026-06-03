@@ -524,7 +524,7 @@ async function acaoExcluirDinamica() {
 
     if (total < 7) return alert("Mínimo 7 jogadores confirmados para sortear!");
 
-    let qtdTimes = Math.floor(total / 7);
+    let qtdTimes = Math.floor(total / 11);
     if (total / qtdTimes > 11) qtdTimes = Math.ceil(total / 9);
 
     const configTimes = [
