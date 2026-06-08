@@ -11,12 +11,11 @@
     <link rel="icon" type="image/jpeg" href="https://i.imgur.com/zSl9YOk.jpeg">
 
     <script>
-      // Registra o Service Worker
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
-          .then(() => console.log("Service Worker Registrado!"))
-          .catch(err => console.log("Erro no SW:", err));
-      }
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log("Service Worker Registrado!"))
+                .catch(err => console.log("Erro no SW:", err));
+        }
     </script>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -166,6 +165,8 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .auth-input {
@@ -200,11 +201,8 @@
 
     <div id="auth-container"
         style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1a1a1a; gap:20px;">
-        
-        <img src="https://i.imgur.com/zSl9YOk.jpeg" 
-             alt="Logo Peladeiros" 
-             style="max-width: 150px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-
+        <img src="https://i.imgur.com/zSl9YOk.jpeg" alt="Logo Peladeiros"
+            style="max-width: 150px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
         <button onclick="loginGoogle()"
             style="padding:15px 30px; border-radius:8px; font-weight:bold; cursor:pointer; background: white; border: none; font-size: 1rem;">
             Entrar com Google
@@ -215,8 +213,9 @@
         <header>
             <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
             <h1 style="font-size: 1.2rem; margin: 5px 0 0 0;">⚽ Sorteio ⚽</h1>
-            <p id="data-topo" style="font-size: 0.85rem; color: #7f8c8d; font-weight: bold; margin-top: 5px; text-transform: capitalize;"></p>
-            
+            <p id="data-topo"
+                style="font-size: 0.85rem; color: #7f8c8d; font-weight: bold; margin-top: 5px; text-transform: capitalize;">
+            </p>
             <button onclick="logout()"
                 style="position:absolute; right:0; top:0; background:none; border:none; color:red; cursor:pointer; font-size:0.7rem;">Sair</button>
         </header>
@@ -227,8 +226,8 @@
         </div>
 
         <h3 id="tituloEspera">Lista de Espera / Cadastro (0)</h3>
-        <ul id="listaEspera" style="list-style:none; padding:0;"></ul>        
-        
+        <ul id="listaEspera" style="list-style:none; padding:0;"></ul>
+
         <h3 id="tituloConfirmados">Confirmados (0)</h3>
         <ul id="listaConfirmados" style="list-style:none; padding:0;"></ul>
 
@@ -236,11 +235,13 @@
             <button class="btn-action btn-draw" onclick="sortear()">🤞 Sortear Times</button>
             <button class="btn-action btn-pdf" onclick="gerarPDF()">📄 Relatório PDF</button>
             <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">📨 Enviar Times WhatsApp</button>
-            <button class="btn-action btn-clear" onclick="window.location.href='config.html'">⚙️ Configurações do Sistema</button>
+            <button class="btn-action btn-clear" onclick="window.location.href='config.html'">⚙️ Configurações do
+                Sistema</button>
         </div>
         <div id="times"></div>
     </div>
 
+    <!-- Modal Edição -->
     <div class="modal" id="modalPagamento">
         <div class="modal-content">
             <h3 style="margin:0">Dados do Jogador</h3>
@@ -256,13 +257,22 @@
                 <option value="1">⭐ (Perna de Pau)</option>
             </select>
 
+            <!-- Seletor da Modalidade de Pagamento -->
+            <label style="font-size:0.75rem; font-weight:bold; margin-top:5px;">Modalidade de Contribuição:</label>
+            <select id="m-modalidade" class="auth-input" onchange="atualizarPlaceholderValor()">
+                <option value="diaria">📆 Diarista</option>
+                <option value="mensalista">💳 Mensalista</option>
+            </select>
+
             <div style="background:#f9f9f9; padding:10px; border-radius:10px; border:1px solid #eee;">
                 <div style="text-align: center; margin-bottom: 15px;">
-                    <label style="font-size:0.7rem; font-weight:bold; display:block; margin-bottom:5px;">QR CODE PARA PAGAMENTO</label>
-                    <img src="https://i.imgur.com/5Dz3zDQ.jpeg" alt="QR Code Pix" style="width: 120px; border-radius: 8px; border: 1px solid #ddd;">
+                    <label style="font-size:0.7rem; font-weight:bold; display:block; margin-bottom:5px;">QR CODE PARA
+                        PAGAMENTO</label>
+                    <img src="https://i.imgur.com/5Dz3zDQ.jpeg" alt="QR Code Pix"
+                        style="width: 120px; border-radius: 8px; border: 1px solid #ddd;">
                 </div>
 
-                <label style="font-size:0.7rem; font-weight:bold;">Pagamento 1</label>
+                <label style="font-size:0.7rem; font-weight:bold;">Pagamento Principal</label>
                 <div style="display:flex; gap:5px; margin-bottom:10px;">
                     <input type="number" id="m-valor" class="auth-input" placeholder="0.00">
                     <select id="m-forma" class="auth-input">
@@ -271,8 +281,8 @@
                         <option value="Crédito">💳Crédito</option>
                     </select>
                 </div>
-                
-                <label style="font-size:0.7rem; font-weight:bold;">Pagamento 2</label>
+
+                <label style="font-size:0.7rem; font-weight:bold;">Pagamento Complementar (Opcional)</label>
                 <div style="display:flex; gap:5px;">
                     <input type="number" id="m-valor2" class="auth-input" placeholder="0.00">
                     <select id="m-forma2" class="auth-input">
@@ -284,23 +294,21 @@
                 </div>
 
                 <div style="margin-top:15px;">
-                    <input type="hidden" id="m-goleiro-status"> 
-                    <button id="btn-goleiro-toggle" onclick="toggleGoleiro()" 
+                    <input type="hidden" id="m-goleiro-status">
+                    <button id="btn-goleiro-toggle" onclick="toggleGoleiro()"
                         style="width:100%; padding:10px; border-radius:8px; border:2px solid #ddd; font-weight:bold; cursor:pointer; transition: 0.3s;">
                         🧤 GOLEIRO FIXO: NÃO
                     </button>
                 </div>
             </div>
             <button onclick="salvarTudo()"
-                style="background:var(--accent); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">SALVAR ALTERAÇÕES</button>
-            <button id="btn-excluir-dinamico" onclick="acaoExcluirDinamica()" 
-                style="background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">
-                🗑️ EXCLUIR
-            </button>
+                style="background:var(--accent); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">SALVAR
+                ALTERAÇÕES</button>
+            <button id="btn-excluir-dinamico" onclick="acaoExcluirDinamica()"
+                style="background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">🗑️
+                EXCLUIR</button>
             <button onclick="fecharModal()"
-                style="background:#eee; border:none; color:#666; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:5px;">
-                CANCELAR
-            </button>
+                style="background:#eee; border:none; color:#666; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:5px;">CANCELAR</button>
         </div>
     </div>
 
@@ -310,9 +318,10 @@
         const db = firebase.firestore();
         let listaJogadores = []; let timesAtuais = [];
 
-        // Estrutura de fallback caso as configurações no banco ainda não existam
         let configSistema = {
             taxa: 15,
+            mensalidade: 50,
+            diaLimite: 10,
             jogadoresPorTime: 11,
             emailsPermitidos: [],
             times: [
@@ -324,38 +333,34 @@
             ]
         };
 
+        function getMesAnoAtual() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+
         function loginGoogle() { firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
         function logout() { firebase.auth().signOut(); window.location.reload(); }
 
-        // Validação de login com escuta EM TEMPO REAL das configurações
         firebase.auth().onAuthStateChanged(u => {
             if (u) {
-                // Escuta modificações da tela de configurações instantaneamente
                 db.collection("configuracoes").doc("geral").onSnapshot(docConfig => {
                     if (docConfig.exists) {
-                        configSistema = docConfig.data();
-                        // Força a atualização visual da lista caso mude a taxa nas configs
-                        if(listaJogadores.length > 0) renderizar();
+                        const dados = docConfig.data();
+                        configSistema = { ...configSistema, ...dados };
+                        if (listaJogadores.length > 0) renderizar();
                     }
-
-                    // Se houver e-mails restritos na lista, valida o usuário atual
                     if (configSistema.emailsPermitidos && configSistema.emailsPermitidos.length > 0) {
                         const emailUsuario = u.email.toLowerCase().trim();
                         const permitido = configSistema.emailsPermitidos.some(e => e.toLowerCase().trim() === emailUsuario);
-                        
                         if (!permitido) {
-                            alert("Acesso negado: Seu e-mail não está autorizado neste sistema.");
+                            alert("Acesso negado.");
                             logout();
                             return;
                         }
                     }
-
-                    document.getElementById('auth-container').style.display = 'none'; 
-                    document.getElementById('app-main').style.display = 'block'; 
-                }, err => {
-                    console.error("Erro ao ouvir configurações:", err);
-                });
-
+                    document.getElementById('auth-container').style.display = 'none';
+                    document.getElementById('app-main').style.display = 'block';
+                }, err => console.error(err));
                 ouvirBanco();
             }
         });
@@ -371,9 +376,12 @@
             const n = document.getElementById('inNome').value.trim();
             if (!n) return;
             if (listaJogadores.some(j => j.nome.toLowerCase() === n.toLowerCase())) {
-                alert("Erro: Este jogador já está cadastrado!"); return;
+                alert("Erro: Jogador já cadastrado!"); return;
             }
-            await db.collection("jogadores").add({ nome: n, valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, nivel: 3, nacimiento: "" });
+            await db.collection("jogadores").add({
+                nome: n, valorPago: 0, forma: "", valorPago2: 0, forma2: "",
+                goleiro: false, nivel: 3, nascimento: "", modalidade: "diaria", mesPago: ""
+            });
             document.getElementById('inNome').value = "";
         }
 
@@ -385,6 +393,17 @@
             return idade;
         }
 
+        function checarConfirmacao(j) {
+            if (j.goleiro) return true;
+            const total = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
+
+            if (j.modalidade === "mensalista") {
+                return j.mesPago === getMesAnoAtual() && total >= (parseFloat(configSistema.mensalidade) || 50);
+            } else {
+                return total >= (parseFloat(configSistema.taxa) || 15);
+            }
+        }
+
         function renderizar() {
             const lc = document.getElementById('listaConfirmados');
             const le = document.getElementById('listaEspera');
@@ -392,81 +411,66 @@
             let c = 0, e = 0;
 
             listaJogadores.forEach(j => {
+                const isC = checarConfirmacao(j);
                 const total = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
-                // Valida a confirmação baseada na taxa dinâmica vinda da configuração
-                const isC = total >= (configSistema.taxa || 15) || j.goleiro;
                 const idade = calcularIdade(j.nascimento);
-                
                 const prefixoGoleiro = j.goleiro ? "🧤 " : "";
-                
+                const rotuloMod = j.modalidade === "mensalista" ? " Mensalista" : " Diarista";
+
                 const html = `<li class="player-item ${isC ? 'bg-confirmado' : 'bg-espera'}" onclick="abrirEdicao('${j.id}')">
-                    <div><strong>${prefixoGoleiro}${j.nome}</strong> ${idade ? `(${idade}a)` : ''}</div>
-                    <div style="font-weight:bold; color:var(--accent)">${isC ? 'R$ ' + total.toFixed(2) : '---'}</div>
+                    <div><strong>${prefixoGoleiro}${j.nome}</strong> ${idade ? `(${idade}a)` : ''} <span style="font-size:0.7rem; color:#888;">[${rotuloMod}]</span></div>
+                    <div style="font-weight:bold; color:var(--accent)">${total > 0 ? 'R$ ' + total.toFixed(2) : '---'}</div>
                 </li>`;
 
                 if (isC) { lc.innerHTML += html; c++; } else { le.innerHTML += html; e++; }
             });
-            
+
             document.getElementById('tituloConfirmados').innerText = `Confirmados (${c})`;
             document.getElementById('tituloEspera').innerText = `Lista de Espera / Cadastro (${e})`;
         }
 
-        function toggleGoleiro() {
-            const btn = document.getElementById('btn-goleiro-toggle');
-            const input = document.getElementById('m-goleiro-status');
-            const isGoleiro = input.value === "true";
-
-            if (isGoleiro) {
-                input.value = "false";
-                btn.innerText = "🧤 GOLEIRO FIXO: NÃO";
-                btn.style.background = "white";
-                btn.style.color = "#333";
-                btn.style.borderColor = "#ddd";
+        function atualizarPlaceholderValor() {
+            const mod = document.getElementById('m-modalidade').value;
+            const p1 = document.getElementById('m-valor');
+            if (mod === "mensalista") {
+                p1.placeholder = `Min: R$ ${(parseFloat(configSistema.mensalidade) || 50).toFixed(2)}`;
             } else {
-                input.value = "true";
-                btn.innerText = "🧤 GOLEIRO FIXO: SIM";
-                btn.style.background = "#f1c40f"; 
-                btn.style.color = "#000";
-                btn.style.borderColor = "#f1c40f";
-                
-                document.getElementById('m-valor').value = 0;
-                document.getElementById('m-valor2').value = 0;
+                p1.placeholder = `Min: R$ ${(parseFloat(configSistema.taxa) || 15).toFixed(2)}`;
             }
-        }        
+        }
 
         function abrirEdicao(id) {
             const j = listaJogadores.find(x => x.id === id);
-            const total = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
-            const isConfirmado = total >= (configSistema.taxa || 15) || j.goleiro;
+            const isConfirmado = checarConfirmacao(j);
 
             document.getElementById('editId').value = id;
             document.getElementById('m-nome').value = j.nome;
             document.getElementById('m-nasc').value = j.nascimento || "";
             document.getElementById('m-nivel').value = j.nivel || 3;
+            document.getElementById('m-modalidade').value = j.modalidade || "diaria";
+
             document.getElementById('m-valor').value = j.valorPago || "";
             document.getElementById('m-forma').value = j.forma || "Pix";
             document.getElementById('m-valor2').value = j.valorPago2 || "";
             document.getElementById('m-forma2').value = j.forma2 || "";
-            
+
+            atualizarPlaceholderValor();
+
             const inputGoleiro = document.getElementById('m-goleiro-status');
             inputGoleiro.value = j.goleiro ? "true" : "false";
             const btnGoleiro = document.getElementById('btn-goleiro-toggle');
-            
+
             if (j.goleiro) {
                 btnGoleiro.innerText = "🧤 GOLEIRO FIXO: SIM";
-                btnGoleiro.style.background = "#f1c40f";
-                btnGoleiro.style.color = "black";
-                btnGoleiro.style.borderColor = "#f1c40f";
+                btnGoleiro.style.background = "#f1c40f"; btnGoleiro.style.color = "black"; btnGoleiro.style.borderColor = "#f1c40f";
             } else {
                 btnGoleiro.innerText = "🧤 GOLEIRO FIXO: NÃO";
-                btnGoleiro.style.background = "white";
-                btnGoleiro.style.color = "#333";
-                btnGoleiro.style.borderColor = "#ddd";
+                btnGoleiro.style.background = "white"; btnGoleiro.style.color = "#333"; btnGoleiro.style.borderColor = "#ddd";
             }
 
             const btnExcluir = document.getElementById('btn-excluir-dinamico');
             if (isConfirmado) {
-                btnExcluir.innerText = "🚫 REMOVER DOS CONFIRMADOS";
+                btnExcluir.innerText = "🚫 REMOVER DA RODADA (RESETAR)";
                 btnExcluir.style.background = "#f39c12";
             } else {
                 btnExcluir.innerText = "🗑️ EXCLUIR DO BANCO";
@@ -479,40 +483,69 @@
         async function salvarTudo() {
             const id = document.getElementById('editId').value;
             const isGoleiro = document.getElementById('m-goleiro-status').value === "true";
-            
+            const modSelected = document.getElementById('m-modalidade').value;
+
+            const v1 = parseFloat(document.getElementById('m-valor').value) || 0;
+            const v2 = parseFloat(document.getElementById('m-valor2').value) || 0;
+            const totalDigitado = v1 + v2;
+
+            if (!isGoleiro && totalDigitado > 0) {
+                if (modSelected === "mensalista") {
+                    const minMensal = parseFloat(configSistema.mensalidade) || 50;
+                    if (totalDigitado < minMensal) {
+                        alert(`Erro: Para Mensalistas, o valor mínimo exigido configurado é R$ ${minMensal.toFixed(2)}`);
+                        return;
+                    }
+
+                    // Validação do dia limite de recebimento
+                    const hoje = new Date();
+                    const limite = parseInt(configSistema.diaLimite) || 10;
+                    if (hoje.getDate() > limite) {
+                        const prosseguir = confirm(`Atenção: Passou do dia limite de recebimento (${limite}). Deseja aceitar a mensalidade mesmo assim?`);
+                        if (!prosseguir) return;
+                    }
+                } else {
+                    const minDiaria = parseFloat(configSistema.taxa) || 15;
+                    if (totalDigitado < minDiaria) {
+                        alert(`Erro: Para Diaristas, o valor mínimo por partida configurado é R$ ${minDiaria.toFixed(2)}`);
+                        return;
+                    }
+                }
+            }
+
             try {
                 await db.collection("jogadores").doc(id).update({
                     nome: document.getElementById('m-nome').value,
                     nascimento: document.getElementById('m-nasc').value,
                     nivel: parseInt(document.getElementById('m-nivel').value),
-                    valorPago: parseFloat(document.getElementById('m-valor').value) || "",
+                    modalidade: modSelected,
+                    valorPago: v1 || "",
                     forma: document.getElementById('m-forma').value,
-                    valorPago2: parseFloat(document.getElementById('m-valor2').value) || "",
+                    valorPago2: v2 || "",
                     forma2: document.getElementById('m-forma2').value,
-                    goleiro: isGoleiro
+                    goleiro: isGoleiro,
+                    mesPago: modSelected === "mensalista" && totalDigitado > 0 ? getMesAnoAtual() : ""
                 });
                 fecharModal();
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao Salvar Alterações.");
             }
-        }        
+        }
 
         async function acaoExcluirDinamica() {
             const id = document.getElementById('editId').value;
             const j = listaJogadores.find(x => x.id === id);
-            const total = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
-            const isConfirmado = total >= (configSistema.taxa || 15) || j.goleiro;
 
-            if (isConfirmado) {
-                if (confirm(`Remover ${j.nome} da lista de confirmados? (Os valores serão zerados)`)) {
+            if (checarConfirmacao(j)) {
+                if (confirm(`Remover confirmação de ${j.nome}? Os valores deste mês/partida serão zerados.`)) {
                     await db.collection("jogadores").doc(id).update({
-                        valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false
+                        valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, mesPago: ""
                     });
                     fecharModal();
                 }
             } else {
-                if (confirm(`Deseja EXCLUIR ${j.nome} permanentemente do banco de dados?`)) {
+                if (confirm(`Deseja EXCLUIR ${j.nome} do banco de dados permanentemente?`)) {
                     await db.collection("jogadores").doc(id).delete();
                     fecharModal();
                 }
@@ -521,72 +554,65 @@
 
         function fecharModal() { document.getElementById('modalPagamento').style.display = 'none'; }
 
-        // Sorteador de equipes dinâmico (Usa o número de jogadores e times salvos nas configurações)
+        function toggleGoleiro() {
+            const btn = document.getElementById('btn-goleiro-toggle');
+            const input = document.getElementById('m-goleiro-status');
+            const isGoleiro = input.value === "true";
+
+            if (isGoleiro) {
+                input.value = "false";
+                btn.innerText = "🧤 GOLEIRO FIXO: NÃO";
+                btn.style.background = "white"; btn.style.color = "#333"; btn.style.borderColor = "#ddd";
+            } else {
+                input.value = "true";
+                btn.innerText = "🧤 GOLEIRO FIXO: SIM";
+                btn.style.background = "#f1c40f"; btn.style.color = "#000"; btn.style.borderColor = "#f1c40f";
+                document.getElementById('m-valor').value = 0;
+                document.getElementById('m-valor2').value = 0;
+            }
+        }
+
         function sortear() {
-            const taxaMinima = configSistema.taxa || 15;
             const porTime = configSistema.jogadoresPorTime || 11;
             const minJogadores = porTime * 2;
 
-            const ativos = listaJogadores.filter(j => ((parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0)) >= taxaMinima || j.goleiro);
+            const ativos = listaJogadores.filter(j => checarConfirmacao(j));
             const total = ativos.length;
 
             if (total < minJogadores) return alert(`Mínimo ${minJogadores} jogadores confirmados para sortear times de ${porTime}!`);
 
             let qtdTimes = Math.floor(total / porTime);
-            if (qtdTimes < 2) qtdTimes = 2; 
+            if (qtdTimes < 2) qtdTimes = 2;
 
-            // Filtra os times válidos configurados na administração (obrigatoriamente que tenham nome)
             const configTimes = configSistema.times.filter(t => t.nome && t.nome.trim() !== "");
-
             if (qtdTimes > configTimes.length) qtdTimes = configTimes.length;
 
-            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({ 
-                nome: configTimes[i].nome, 
-                cor: configTimes[i].cor, 
-                membros: [], 
-                somaNivel: 0, 
-                somaIdade: 0,
-                idades: [] 
+            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({
+                nome: configTimes[i].nome, cor: configTimes[i].cor, membros: [], somaNivel: 0, somaIdade: 0, idades: []
             }));
 
-            // Distribuição estruturada (Goleiros e Linhas separados)
             const gols = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
             const linha = ativos.filter(j => !j.goleiro).sort((a, b) => {
-                if (b.nivel !== a.nivel) return b.nivel - a.nivel; 
-                const idadeA = calcularIdade(a.nascimento) || 30;
-                const idadeB = calcularIdade(b.nascimento) || 30;
-                return idadeB - idadeA;
+                if (b.nivel !== a.nivel) return b.nivel - a.nivel;
+                return (calcularIdade(b.nascimento) || 30) - (calcularIdade(a.nascimento) || 30);
             });
 
-            // 1. Distribuir Goleiros
-            gols.forEach((g, i) => { 
+            gols.forEach((g, i) => {
                 const tIdx = i % qtdTimes;
-                timesAtuais[tIdx].membros.push("🧤 " + g.nome); 
-                const id = calcularIdade(g.nascimento); 
-                if (id) {
-                    timesAtuais[tIdx].idades.push(id);
-                    timesAtuais[tIdx].somaIdade += id;
-                }
+                timesAtuais[tIdx].membros.push("🧤 " + g.nome);
+                const id = calcularIdade(g.nascimento); if (id) { timesAtuais[tIdx].idades.push(id); timesAtuais[tIdx].somaIdade += id; }
             });
 
-            // 2. Distribuir Linha via algoritmo Serpente para equilíbrio
             linha.forEach(l => {
-                timesAtuais.sort((a, b) => {
-                    return (a.membros.length - b.membros.length) || 
-                           (a.somaNivel - b.somaNivel) || 
-                           (a.somaIdade - b.somaIdade);
-                });
-
+                timesAtuais.sort((a, b) => (a.membros.length - b.membros.length) || (a.somaNivel - b.somaNivel) || (a.somaIdade - b.somaIdade));
                 if (timesAtuais[0]) {
                     timesAtuais[0].membros.push("⚽ " + l.nome);
                     timesAtuais[0].somaNivel += l.nivel;
                     const id = calcularIdade(l.nascimento) || 30;
-                    timesAtuais[0].idades.push(id);
-                    timesAtuais[0].somaIdade += id;
+                    timesAtuais[0].idades.push(id); timesAtuais[0].somaIdade += id;
                 }
             });
 
-            // Renderização no HTML com as cores customizadas
             const box = document.getElementById('times');
             box.innerHTML = `<h3>Times Sorteados (${total} jogadores)</h3>`;
             timesAtuais.forEach(t => {
@@ -611,46 +637,37 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const dataF = new Date().toLocaleDateString('pt-BR');
-            
+
             doc.setFontSize(16);
             doc.text(`Relatório Financeiro - ${dataF}`, 14, 20);
 
             let tPix = 0, tDin = 0, tCre = 0, tGer = 0;
             const pagantes = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0) > 0);
 
-            if (pagantes.length === 0) {
-                alert("Não há pagamentos registrados para gerar o relatório.");
-                return;
-            }
+            if (pagantes.length === 0) { return alert("Não há pagamentos para gerar o relatório."); }
 
             const body = pagantes.map(j => {
                 const v1 = parseFloat(j.valorPago) || 0;
                 const v2 = parseFloat(j.valorPago2) || 0;
                 const f1 = j.forma || "Não inf.";
                 const f2 = j.forma2 || "";
-                const totalIndividual = v1 + v2;
+                const total = v1 + v2;
 
-                [ {v: v1, f: f1}, {v: v2, f: f2} ].forEach(p => {
+                [{ v: v1, f: f1 }, { v: v2, f: f2 }].forEach(p => {
                     if (p.f === "Pix") tPix += p.v;
                     else if (p.f === "Dinheiro") tDin += p.v;
                     else if (p.f === "Crédito") tCre += p.v;
                 });
-
-                tGer += totalIndividual;
-                return [j.nome, f2 ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}` : `${f1}: R$${v1.toFixed(2)}`, `R$ ${totalIndividual.toFixed(2)}`];
+                tGer += total;
+                const modalidadeTxt = j.modalidade === "mensalista" ? " (Mensal)" : " (Diária)";
+                return [j.nome + modalidadeTxt, f2 ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}` : `${f1}: R$${v1.toFixed(2)}`, `R$ ${total.toFixed(2)}`];
             });
 
             doc.autoTable({
                 startY: 25,
-                head: [['Jogador', 'Forma de Pagamento', 'Total']],
+                head: [['Jogador', 'Detalhamento', 'Total']],
                 body: body,
-                headStyles: { fillColor: [44, 62, 80] },
-                didParseCell: (data) => {
-                    if (data.section === 'body' && data.column.index === 1 && data.cell.raw.includes("Crédito")) {
-                        data.cell.styles.textColor = [231, 76, 60];
-                        data.cell.styles.fontStyle = 'bold';
-                    }
-                }
+                headStyles: { fillColor: [44, 62, 80] }
             });
 
             doc.autoTable({
@@ -661,13 +678,13 @@
                 headStyles: { fillColor: [39, 174, 96] }
             });
 
-            doc.save(`Financeiro_Pelada_${dataF.replace(/\//g, '-')}.pdf`);
+            doc.save(`Financeiro_${dataF.replace(/\//g, '-')}.pdf`);
         }
 
         function enviarWhatsApp() {
             if (!timesAtuais.length) return alert("Sorteie primeiro!");
             const agora = new Date();
-            let msg = `*⚽ TIMES SORTEADOS - ${agora.toLocaleDateString()} às ${agora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}*\n\n`;
+            let msg = `*⚽ TIMES SORTEADOS - ${agora.toLocaleDateString()}*\n\n`;
             timesAtuais.forEach(t => {
                 const medI = t.idades.length ? (t.idades.reduce((a, b) => a + b) / t.idades.length).toFixed(1) : 'N/A';
                 msg += `*${t.nome.toUpperCase()}* (⭐${(t.somaNivel / t.membros.length).toFixed(1)} | 🎂${medI}a)\n${t.membros.join('\n')}\n\n`;
@@ -680,8 +697,7 @@
             const agora = new Date();
             const opcoes = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             let dataFormatada = agora.toLocaleDateString('pt-BR', opcoes);
-            dataFormatada = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
-            elementoData.textContent = dataFormatada;
+            elementoData.textContent = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
         }
 
         window.onload = atualizarData;
