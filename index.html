@@ -542,7 +542,7 @@
             let qtdTimes = Math.floor(total / porTime);
             if (qtdTimes < 2) qtdTimes = 2; 
 
-            // Filtra os times válidos configurados na administração
+            // Filtra os times válidos configurados na administração (obrigatoriamente que tenham nome)
             const configTimes = configSistema.times.filter(t => t.nome && t.nome.trim() !== "");
 
             if (qtdTimes > configTimes.length) qtdTimes = configTimes.length;
@@ -562,7 +562,7 @@
                 if (b.nivel !== a.nivel) return b.nivel - a.nivel; 
                 const idadeA = calcularIdade(a.nascimento) || 30;
                 const idadeB = calcularIdade(b.nascimento) || 30;
-                return interstate = idadeB - interstate;
+                return idadeB - idadeA;
             });
 
             // 1. Distribuir Goleiros
