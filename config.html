@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -118,7 +117,7 @@
 </div>
 
 <script>
-    // Configurações do Firebase (Mesmas credenciais do seu index.html)
+    // Configurações do Firebase
     const firebaseConfig = { 
         apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY", 
         authDomain: "dbpeladeiros.firebaseapp.com", 
@@ -130,7 +129,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Estrutura padrão padrão inicial do sistema
+    // Estrutura padrão inicial do sistema
     let configLocal = {
         taxa: 15,
         jogadoresPorTime: 11,
@@ -149,7 +148,8 @@
         const wrapper = document.getElementById('container-times');
         wrapper.innerHTML = "";
         for (let i = 0; i < 5; i++) {
-            const t = configLocal.times[i] || { nome: "", cor: "#cccccc" };
+            // Garante que se a posição não existir, usa uma cor neutra e nome vazio
+            const t = (configLocal.times && configLocal.times[i]) ? configLocal.times[i] : { nome: "", cor: "#cccccc" };
             wrapper.innerHTML += `
                 <div class="row-time">
                     <input type="color" id="t-cor-${i}" value="${t.cor}">
@@ -167,14 +167,14 @@
                 configLocal = doc.data();
             }
             
-            document.getElementById('c-taxa').value = configLocal.taxa || 15;
-            document.getElementById('c-jogadores').value = configLocal.jogadoresPorTime || 11;
+            document.getElementById('c-taxa').value = configLocal.taxa !== undefined ? configLocal.taxa : 15;
+            document.getElementById('c-jogadores').value = configLocal.jogadoresPorTime !== undefined ? configLocal.jogadoresPorTime : 11;
             document.getElementById('c-emails').value = configLocal.emailsPermitidos ? configLocal.emailsPermitidos.join(', ') : "";
             
             renderizarInputsTimes();
         } catch (error) {
             console.error("Erro ao carregar configurações:", error);
-            renderizarInputsTimes();
+            renderizarInputsTimes(); // Fallback estrutural
         }
     }
 
@@ -197,7 +197,8 @@
             novosTimes.push({ nome: nomeT, cor: corT });
         }
 
-        const payload = {
+        // Atualiza a nossa variável de controle local antes do upload
+        configLocal = {
             taxa: taxaValue,
             jogadoresPorTime: jogsValue,
             emailsPermitidos: emailsArray,
@@ -205,7 +206,12 @@
         };
 
         try {
-            await db.collection("configuracoes").doc("geral").set(payload);
+            // Salva no banco de dados
+            await db.collection("configuracoes").doc("geral").set(configLocal);
+            
+            // Força a atualização visual imediata dos inputs
+            renderizarInputsTimes();
+            
             alert("✅ Configurações salvas com sucesso!");
         } catch (error) {
             console.error("Erro ao salvar:", error);
