@@ -1,1 +1,248 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações do Sistema - Peladeiros</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h2, h3 { color: #2c3e50; margin-top: 0; }
+        hr { border: 0; border-top: 1px solid #ddd; margin: 15px 0; }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        label { font-weight: bold; font-size: 0.9rem; color: #34495e; }
+        input[type="text"], input[type="number"], textarea {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .row-time {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        input[type="color"] {
+            border: none;
+            width: 45px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+        .btn-save { background: #27ae60; color: white; }
+        .btn-back { background: #95a5a6; color: white; text-align: center; text-decoration: none; display: block; box-sizing: border-box; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .hint { font-size: 0.75rem; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>⚙️ Configurações</h2>
+    <p class="hint">Ajustes gerais do sorteio e acessos.</p>
+    <hr>
+
+    <!-- Parâmetros do Jogo -->
+    <div class="form-group">
+        <label for="c-taxa">💰 Taxa da Pelada (R$)</label>
+        <input type="number" id="c-taxa" min="0" placeholder="Ex: 15.00">
+        <span class="hint">Valor mínimo pago para ser considerado "Confirmado" automaticamente.</span>
+    </div>
+
+    <div class="form-group">
+        <label for="c-jogadores">👥 Atletas por Equipe</label>
+        <input type="number" id="c-jogadores" min="5" max="11" placeholder="Ex: 11">
+        <span class="hint">Quantidade padrão de membros em linha + goleiro por time.</span>
+    </div>
+
+    <hr>
+    <!-- Permissões de Usuários -->
+    <div class="form-group">
+        <label for="c-emails">🔒 E-mails com Acesso Administrativo</label>
+        <textarea id="c-emails" rows="3" placeholder="admin@email.com, fulano@email.com"></textarea>
+        <span class="hint">Separe os e-mails autorizados usando vírgulas (,). Se deixar vazio, qualquer login do Google cadastrado poderá entrar.</span>
+    </div>
+
+    <hr>
+    <!-- Customização das Equipes -->
+    <h3>🎨 Nomes e Cores dos Times</h3>
+    <p class="hint">Configure até 5 times disponíveis para ordenação do sorteio.</p>
+    
+    <div id="container-times">
+        <!-- Gerado dinamicamente via JS -->
+    </div>
+
+    <hr>
+    <!-- Botões de Ação -->
+    <button class="btn btn-save" onclick="salvarConfiguracoes()">💾 Salvar Configurações</button>
+    <button class="btn btn-danger" onclick="limparCaixaGeral()">🔄 Zerar Caixa do Dia (Geral)</button>
+    <a href="index.html" class="btn btn-back">⬅️ Voltar ao Início</a>
+</div>
+
+<script>
+    // Configurações do Firebase (Mesmas credenciais do seu index.html)
+    const firebaseConfig = { 
+        apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY", 
+        authDomain: "dbpeladeiros.firebaseapp.com", 
+        projectId: "dbpeladeiros", 
+        storageBucket: "dbpeladeiros.firebasestorage.app", 
+        messagingSenderId: "460398325975", 
+        appId: "1:460398325975:web:b382791c2d132d1a3d0092" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Estrutura padrão padrão inicial do sistema
+    let configLocal = {
+        taxa: 15,
+        jogadoresPorTime: 11,
+        emailsPermitidos: [],
+        times: [
+            { nome: "Verde", cor: "#27ae60" },
+            { nome: "Amarelo", cor: "#f1c40f" },
+            { nome: "Vermelho", cor: "#e74c3c" },
+            { nome: "Roxo", cor: "#9b59b6" },
+            { nome: "Laranja", cor: "#e67e22" }
+        ]
+    };
+
+    // Renderiza os inputs dos times na tela de forma limpa
+    function renderizarInputsTimes() {
+        const wrapper = document.getElementById('container-times');
+        wrapper.innerHTML = "";
+        for (let i = 0; i < 5; i++) {
+            const t = configLocal.times[i] || { nome: "", cor: "#cccccc" };
+            wrapper.innerHTML += `
+                <div class="row-time">
+                    <input type="color" id="t-cor-${i}" value="${t.cor}">
+                    <input type="text" id="t-nome-${i}" value="${t.nome}" placeholder="Nome do Time ${i+1} (Opcional)">
+                </div>
+            `;
+        }
+    }
+
+    // Carrega dados existentes salvos no Firebase central
+    async function carregarConfiguracoes() {
+        try {
+            const doc = await db.collection("configuracoes").doc("geral").get();
+            if (doc.exists) {
+                configLocal = doc.data();
+            }
+            
+            document.getElementById('c-taxa').value = configLocal.taxa || 15;
+            document.getElementById('c-jogadores').value = configLocal.jogadoresPorTime || 11;
+            document.getElementById('c-emails').value = configLocal.emailsPermitidos ? configLocal.emailsPermitidos.join(', ') : "";
+            
+            renderizarInputsTimes();
+        } catch (error) {
+            console.error("Erro ao carregar configurações:", error);
+            renderizarInputsTimes();
+        }
+    }
+
+    // Salva as alterações da interface no banco de dados Firestore
+    async function salvarConfiguracoes() {
+        const taxaValue = parseFloat(document.getElementById('c-taxa').value) || 0;
+        const jogsValue = parseInt(document.getElementById('c-jogadores').value) || 11;
+        const emailsRaw = document.getElementById('c-emails').value;
+        
+        // Trata os emails digitados removendo espaços
+        const emailsArray = emailsRaw.split(',')
+                                     .map(e => e.trim())
+                                     .filter(e => e.length > 0);
+
+        // Mapeia os inputs de cores e nomes customizados
+        const novosTimes = [];
+        for (let i = 0; i < 5; i++) {
+            const nomeT = document.getElementById(`t-nome-${i}`).value.trim();
+            const corT = document.getElementById(`t-cor-${i}`).value;
+            novosTimes.push({ nome: nomeT, cor: corT });
+        }
+
+        const payload = {
+            taxa: taxaValue,
+            jogadoresPorTime: jogsValue,
+            emailsPermitidos: emailsArray,
+            times: novosTimes
+        };
+
+        try {
+            await db.collection("configuracoes").doc("geral").set(payload);
+            alert("✅ Configurações salvas com sucesso!");
+        } catch (error) {
+            console.error("Erro ao salvar:", error);
+            alert("❌ Falha ao salvar configurações.");
+        }
+    }
+
+    // Função de limpeza do caixa migrada com segurança para esta tela
+    async function limparCaixaGeral() {
+        if (!confirm("⚠️ ATENÇÃO: Deseja zerar os pagamentos e goleiros fixos de TODOS os atletas para iniciar um novo dia?")) return;
+        try {
+            const snap = await db.collection("jogadores").get();
+            const batch = db.batch();
+            snap.docs.forEach(doc => {
+                batch.update(db.collection("jogadores").doc(doc.id), { 
+                    valorPago: 0, forma: "", 
+                    valorPago2: 0, forma2: "", 
+                    goleiro: false 
+                });
+            });
+            await batch.commit();
+            alert("🔄 Caixa e presenças zeradas com sucesso!");
+        } catch (error) {
+            console.error("Erro ao zerar caixa:", error);
+            alert("❌ Erro ao limpar informações.");
+        }
+    }
+
+    // Segurança na visualização das configurações se o login cair
+    firebase.auth().onAuthStateChanged(u => {
+        if (!u) {
+            alert("Faça login na tela inicial primeiro!");
+            window.location.href = "index.html";
+        } else {
+            carregarConfiguracoes();
+        }
+    });
+</script>
+</body>
+</html>
