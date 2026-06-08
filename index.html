@@ -6,9 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gestão Peladeiros - 2026</title>
 
-    <!-- Link para o Manifest -->
     <link rel="manifest" href="manifest.json">
-    <!-- Cor da barra de status no mobile -->
     <meta name="theme-color" content="#2c3e50">
     <link rel="icon" type="image/jpeg" href="https://i.imgur.com/zSl9YOk.jpeg">
 
@@ -21,7 +19,6 @@
       }
     </script>
 
-    <!-- Firebase & Bibliotecas -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
@@ -204,7 +201,6 @@
     <div id="auth-container"
         style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1a1a1a; gap:20px;">
         
-        <!-- Logo acima do botão -->
         <img src="https://i.imgur.com/zSl9YOk.jpeg" 
              alt="Logo Peladeiros" 
              style="max-width: 150px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
@@ -219,7 +215,6 @@
         <header>
             <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
             <h1 style="font-size: 1.2rem; margin: 5px 0 0 0;">⚽ Sorteio ⚽</h1>
-            <!-- Elemento onde a data será exibida -->
             <p id="data-topo" style="font-size: 0.85rem; color: #7f8c8d; font-weight: bold; margin-top: 5px; text-transform: capitalize;"></p>
             
             <button onclick="logout()"
@@ -241,13 +236,11 @@
             <button class="btn-action btn-draw" onclick="sortear()">🤞 Sortear Times</button>
             <button class="btn-action btn-pdf" onclick="gerarPDF()">📄 Relatório PDF</button>
             <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">📨 Enviar Times WhatsApp</button>
-            <!-- Botão redirecionando para a nova config.html -->
             <button class="btn-action btn-clear" onclick="window.location.href='config.html'">⚙️ Configurações do Sistema</button>
         </div>
         <div id="times"></div>
     </div>
 
-    <!-- Modal Edição -->
     <div class="modal" id="modalPagamento">
         <div class="modal-content">
             <h3 style="margin:0">Dados do Jogador</h3>
@@ -264,7 +257,6 @@
             </select>
 
             <div style="background:#f9f9f9; padding:10px; border-radius:10px; border:1px solid #eee;">
-                <!-- QR CODE -->
                 <div style="text-align: center; margin-bottom: 15px;">
                     <label style="font-size:0.7rem; font-weight:bold; display:block; margin-bottom:5px;">QR CODE PARA PAGAMENTO</label>
                     <img src="https://i.imgur.com/5Dz3zDQ.jpeg" alt="QR Code Pix" style="width: 120px; border-radius: 8px; border: 1px solid #ddd;">
@@ -291,7 +283,6 @@
                     </select>
                 </div>
 
-                <!-- BOTÃO GOLEIRO -->
                 <div style="margin-top:15px;">
                     <input type="hidden" id="m-goleiro-status"> 
                     <button id="btn-goleiro-toggle" onclick="toggleGoleiro()" 
@@ -336,13 +327,15 @@
         function loginGoogle() { firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
         function logout() { firebase.auth().signOut(); window.location.reload(); }
 
-        // Validação de login com a regra de segurança de emails autorizados vinda das configs
-        firebase.auth().onAuthStateChanged(async u => {
+        // Validação de login com escuta EM TEMPO REAL das configurações
+        firebase.auth().onAuthStateChanged(u => {
             if (u) {
-                try {
-                    const docConfig = await db.collection("configuracoes").doc("geral").get();
+                // Escuta modificações da tela de configurações instantaneamente
+                db.collection("configuracoes").doc("geral").onSnapshot(docConfig => {
                     if (docConfig.exists) {
                         configSistema = docConfig.data();
+                        // Força a atualização visual da lista caso mude a taxa nas configs
+                        if(listaJogadores.length > 0) renderizar();
                     }
 
                     // Se houver e-mails restritos na lista, valida o usuário atual
@@ -359,11 +352,11 @@
 
                     document.getElementById('auth-container').style.display = 'none'; 
                     document.getElementById('app-main').style.display = 'block'; 
-                    ouvirBanco();
-                } catch (e) {
-                    console.error("Erro ao carregar parâmetros iniciais:", e);
-                    ouvirBanco();
-                }
+                }, err => {
+                    console.error("Erro ao ouvir configurações:", err);
+                });
+
+                ouvirBanco();
             }
         });
 
@@ -380,7 +373,7 @@
             if (listaJogadores.some(j => j.nome.toLowerCase() === n.toLowerCase())) {
                 alert("Erro: Este jogador já está cadastrado!"); return;
             }
-            await db.collection("jogadores").add({ nome: n, valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, nivel: 3, nascimento: "" });
+            await db.collection("jogadores").add({ nome: n, valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, nivel: 3, nacimiento: "" });
             document.getElementById('inNome').value = "";
         }
 
