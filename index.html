@@ -493,3 +493,230 @@
         async function salvarTudo() {
             const id = document.getElementById('editId').value;
             const isGoleiro = document.getElementById('m-goleiro-status').value === "true";
+            const modSelected = document.getElementById('m-modalidade').value;
+            
+            const v1 = parseFloat(document.getElementById('m-valor').value) || 0;
+            const v2 = parseFloat(document.getElementById('m-valor2').value) || 0;
+            const totalDigitado = v1 + v2;
+
+            if (!isGoleiro && totalDigitado > 0) {
+                if (modSelected === "mensalista") {
+                    const minMensal = parseFloat(configSistema.mensalidade) || 50;
+                    if (totalDigitado < minMensal) {
+                        alert(`Erro: Para Mensalistas, o valor mínimo exigido configurado é R$ ${minMensal.toFixed(2)}`);
+                        return;
+                    }
+                    
+                    const hoje = new Date();
+                    const limite = parseInt(configSistema.diaLimite) || 10;
+                    if (hoje.getDate() > limite) {
+                        const prosseguir = confirm(`Atenção: Passou do dia limite de recebimento (${limite}). Deseja aceitar a mensalidade mesmo assim?`);
+                        if (!prosseguir) return;
+                    }
+                } else {
+                    const minDiaria = parseFloat(configSistema.taxa) || 15;
+                    if (totalDigitado < minDiaria) {
+                        alert(`Erro: Para Diaristas, o valor mínimo por partida configurado é R$ ${minDiaria.toFixed(2)}`);
+                        return;
+                    }
+                }
+            }
+
+            try {
+                const dadosParaSalvar = {
+                    nome: document.getElementById('m-nome').value,
+                    nascimento: document.getElementById('m-nasc').value,
+                    nivel: parseInt(document.getElementById('m-nivel').value),
+                    modalidade: modSelected,
+                    valorPago: v1 || "",
+                    forma: document.getElementById('m-forma').value,
+                    valorPago2: v2 || "",
+                    forma2: document.getElementById('m-forma2').value,
+                    goleiro: isGoleiro
+                };
+
+                if (modSelected === "mensalista" && totalDigitado > 0) {
+                    dadosParaSalvar.mesPago = getMesAnoAtual();
+                    dadosParaSalvar.presencaRodada = true; // Confirma na rodada logo após pagar
+                }
+
+                await db.collection("jogadores").doc(id).update(dadosParaSalvar);
+                fecharModal();
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao Salvar Alterações.");
+            }
+        }        
+
+        async function acaoExcluirDinamica() {
+            const id = document.getElementById('editId').value;
+            const j = listaJogadores.find(x => x.id === id);
+
+            if (checarConfirmacao(j)) {
+                if (confirm(`Remover confirmação de ${j.nome}? Os valores ou presenças serão limpos.`)) {
+                    await db.collection("jogadores").doc(id).update({
+                        valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, mesPago: "", presencaRodada: false
+                    });
+                    fecharModal();
+                }
+            } else {
+                if (confirm(`Deseja EXCLUIR ${j.nome} do banco de dados permanentemente?`)) {
+                    await db.collection("jogadores").doc(id).delete();
+                    fecharModal();
+                }
+            }
+        }
+
+        function fecharModal() { document.getElementById('modalPagamento').style.display = 'none'; }
+
+        function toggleGoleiro() {
+            const btn = document.getElementById('btn-goleiro-toggle');
+            const input = document.getElementById('m-goleiro-status');
+            const isGoleiro = input.value === "true";
+
+            if (isGoleiro) {
+                input.value = "false";
+                btn.innerText = "🧤 GOLEIRO FIXO: NÃO";
+                btn.style.background = "white"; btn.style.color = "#333"; btn.style.borderColor = "#ddd";
+            } else {
+                input.value = "true";
+                btn.innerText = "🧤 GOLEIRO FIXO: SIM";
+                btn.style.background = "#f1c40f"; btn.style.color = "#000"; btn.style.borderColor = "#f1c40f";
+                document.getElementById('m-valor').value = 0;
+                document.getElementById('m-valor2').value = 0;
+            }
+        }        
+
+        function sortear() {
+            const porTime = configSistema.jogadoresPorTime || 11;
+            const minJogadores = porTime * 2;
+
+            const ativos = listaJogadores.filter(j => checarConfirmacao(j));
+            const total = ativos.length;
+
+            if (total < minJogadores) return alert(`Mínimo ${minJogadores} jogadores confirmados para sortear times de ${porTime}!`);
+
+            let qtdTimes = Math.floor(total / porTime);
+            if (qtdTimes < 2) qtdTimes = 2; 
+
+            const configTimes = configSistema.times.filter(t => t.nome && t.nome.trim() !== "");
+            if (qtdTimes > configTimes.length) qtdTimes = configTimes.length;
+
+            timesAtuais = Array.from({ length: qtdTimes }, (_, i) => ({ 
+                nome: configTimes[i].nome, cor: configTimes[i].cor, membros: [], somaNivel: 0, somaIdade: 0, idades: [] 
+            }));
+
+            const gols = ativos.filter(j => j.goleiro).sort(() => Math.random() - 0.5);
+            const linha = ativos.filter(j => !j.goleiro).sort((a, b) => {
+                if (b.nivel !== a.nivel) return b.nivel - a.nivel; 
+                return (calcularIdade(b.nascimento) || 30) - (calcularIdade(a.nascimento) || 30);
+            });
+
+            gols.forEach((g, i) => { 
+                const tIdx = i % qtdTimes;
+                timesAtuais[tIdx].membros.push("🧤 " + g.nome); 
+                const id = calcularIdade(g.nascimento); if (id) { timesAtuais[tIdx].idades.push(id); timesAtuais[tIdx].somaIdade += id; }
+            });
+
+            linha.forEach(l => {
+                timesAtuais.sort((a, b) => (a.membros.length - b.membros.length) || (a.somaNivel - b.somaNivel) || (a.somaIdade - b.somaIdade));
+                if (timesAtuais[0]) {
+                    timesAtuais[0].membros.push("⚽ " + l.nome);
+                    timesAtuais[0].somaNivel += l.nivel;
+                    const id = calcularIdade(l.nascimento) || 30;
+                    timesAtuais[0].idades.push(id); timesAtuais[0].somaIdade += id;
+                }
+            });
+
+            const box = document.getElementById('times');
+            box.innerHTML = `<h3>Times Sorteados (${total} jogadores)</h3>`;
+            timesAtuais.forEach(t => {
+                const medI = t.idades.length ? (t.somaIdade / t.idades.length).toFixed(1) : 'N/A';
+                const forca = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
+                box.innerHTML += `
+                    <div class="card-time" style="border-left:10px solid ${t.cor}">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="color:${t.cor}">${t.nome}</strong>
+                            <div>
+                                <span class="badge-info">👥 ${t.membros.length} Jogs</span>
+                                <span class="badge-info">🎂 Méd: ${medI}a</span> 
+                                <span class="badge-info">⭐ Força: ${forca}</span>
+                            </div>
+                        </div>
+                        <div style="margin-top:8px; font-size:0.85rem;">${t.membros.join('<br>')}</div>
+                    </div>`;
+            });
+        }
+
+        function gerarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const dataF = new Date().toLocaleDateString('pt-BR');
+            
+            doc.setFontSize(16);
+            doc.text(`Relatório Financeiro - ${dataF}`, 14, 20);
+
+            let tPix = 0, tDin = 0, tCre = 0, tGer = 0;
+            const pagantes = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0) > 0);
+
+            if (pagantes.length === 0) { return alert("Não há pagamentos para gerar o relatório."); }
+
+            const body = pagantes.map(j => {
+                const v1 = parseFloat(j.valorPago) || 0;
+                const v2 = parseFloat(j.valorPago2) || 0;
+                const f1 = j.forma || "Não inf.";
+                const f2 = j.forma2 || "";
+                const total = v1 + v2;
+
+                [ {v: v1, f: f1}, {v: v2, f: f2} ].forEach(p => {
+                    if (p.f === "Pix") tPix += p.v;
+                    else if (p.f === "Dinheiro") tDin += p.v;
+                    else if (p.f === "Crédito") tCre += p.v;
+                });
+                tGer += total;
+                const modalidadeTxt = j.modalidade === "mensalista" ? " (Mensal)" : " (Diária)";
+                return [j.nome + modalidadeTxt, f2 ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}` : `${f1}: R$${v1.toFixed(2)}`, `R$ ${total.toFixed(2)}`];
+            });
+
+            doc.autoTable({
+                startY: 25,
+                head: [['Jogador', 'Detalhamento', 'Total']],
+                body: body,
+                headStyles: { fillColor: [44, 62, 80] }
+            });
+
+            doc.autoTable({
+                startY: doc.lastAutoTable.finalY + 10,
+                head: [['Modalidade', 'Total']],
+                body: [['PIX', `R$ ${tPix.toFixed(2)}`], ['DINHEIRO', `R$ ${tDin.toFixed(2)}`], ['CRÉDITO', `R$ ${tCre.toFixed(2)}`], ['TOTAL GERAL', `R$ ${tGer.toFixed(2)}`]],
+                theme: 'striped',
+                headStyles: { fillColor: [39, 174, 96] }
+            });
+
+            doc.save(`Financeiro_${dataF.replace(/\//g, '-')}.pdf`);
+        }
+
+        function enviarWhatsApp() {
+            if (!timesAtuais.length) return alert("Sorteie primeiro!");
+            const agora = new Date();
+            let msg = `*⚽ TIMES SORTEADOS - ${agora.toLocaleDateString()}*\n\n`;
+            timesAtuais.forEach(t => {
+                const medI = t.idades.length ? (t.idades.reduce((a, b) => a + b) / t.idades.length).toFixed(1) : 'N/A';
+                msg += `*${t.nome.toUpperCase()}* (⭐${(t.somaNivel / t.membros.length).toFixed(1)} | 🎂${medI}a)\n${t.membros.join('\n')}\n\n`;
+            });
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+        }
+
+        function atualizarData() {
+            const elementoData = document.getElementById('data-topo');
+            const agora = new Date();
+            const opcoes = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            let dataFormatada = agora.toLocaleDateString('pt-BR', opcoes);
+            elementoData.textContent = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
+        }
+
+        window.onload = atualizarData;
+    </script>
+</body>
+
+</html>
