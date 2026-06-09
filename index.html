@@ -404,7 +404,7 @@
                 
                 // Exibe etiqueta contextualizada de "Pago" para mensalistas recorrentes
                 const isMensalistaPago = j.modalidade === "mensalista" && j.mesPago === getMesAnoAtual();
-                const textoLateral = isMensalistaPago ? "MENSAL (PAGO)" : (total > 0 ? 'R$ ' + total.toFixed(2) : '---');
+                const textoLateral = isMensalistaPago ? "MENSAL PG" : (total > 0 ? 'R$ ' + total.toFixed(2) : '---');
                 const rotuloMod = j.modalidade === "mensalista" ? " Mensalista" : " Diarista";
                 
                 const html = `<li class="player-item ${isC ? 'bg-confirmado' : 'bg-espera'}" onclick="lidarCliqueJogador('${j.id}')">
