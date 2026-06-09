@@ -124,19 +124,17 @@
         <p class="hint">Ajustes gerais do sorteio e acessos.</p>
         <hr>
 
-        <!-- Parâmetros do Jogo -->
         <div style="background:#fff; padding:15px; border-radius:8px; margin-bottom:15px; border:1px solid #ddd;">
             <h3>💰 Valores e Regras de Pagamento</h3>
 
             <label style="font-weight:bold; display:block; margin-top:10px;">Taxa Diária (R$):</label>
-            <input type="number" id="cfg-taxa" class="auth-input" placeholder="Ex: 15">
+            <input type="number" id="cfg-taxa" placeholder="Ex: 15">
 
             <label style="font-weight:bold; display:block; margin-top:10px;">Mensalidade Fixa (R$):</label>
-            <input type="number" id="cfg-mensalidade" class="auth-input" placeholder="Ex: 50">
+            <input type="number" id="cfg-mensalidade" placeholder="Ex: 50">
 
-            <label style="font-weight:bold; display:block; margin-top:10px;">Dia Limite para Mensalistas (1 a
-                31):</label>
-            <input type="number" id="cfg-dia-limite" class="auth-input" min="1" max="31" placeholder="Ex: 10">
+            <label style="font-weight:bold; display:block; margin-top:10px;">Dia Limite para Mensalistas (1 a 31):</label>
+            <input type="number" id="cfg-dia-limite" min="1" max="31" placeholder="Ex: 10">
         </div>
 
         <div class="form-group">
@@ -146,25 +144,20 @@
         </div>
 
         <hr>
-        <!-- Permissões de Usuários -->
         <div class="form-group">
             <label for="c-emails">🔒 E-mails com Acesso Administrativo</label>
             <textarea id="c-emails" rows="3" placeholder="admin@email.com, fulano@email.com"></textarea>
-            <span class="hint">Separe os e-mails autorizados usando vírgulas (,). Se deixar vazio, qualquer login do
-                Google cadastrado poderá entrar.</span>
+            <span class="hint">Separe os e-mails autorizados usando vírgulas (,). Se deixar vazio, qualquer login do Google cadastrado poderá entrar.</span>
         </div>
 
         <hr>
-        <!-- Customização das Equipes -->
         <h3>🎨 Nomes e Cores dos Times</h3>
         <p class="hint">Configure até 5 times disponíveis para ordenação do sorteio.</p>
 
         <div id="container-times">
-            <!-- Gerado dinamicamente via JS -->
-        </div>
+            </div>
 
         <hr>
-        <!-- Botões de Ação -->
         <button class="btn btn-save" onclick="salvarConfiguracoes()">💾 Salvar Configurações</button>
         <button class="btn btn-danger" onclick="limparCaixaGeral()">🔄 Zerar Caixa do Dia (Geral)</button>
         <a href="index.html" class="btn btn-back">⬅️ Voltar ao Início</a>
@@ -186,6 +179,8 @@
         // Estrutura padrão inicial do sistema
         let configLocal = {
             taxa: 15,
+            mensalidade: 50,
+            diaLimite: 10,
             jogadoresPorTime: 11,
             emailsPermitidos: [],
             times: [
@@ -197,12 +192,10 @@
             ]
         };
 
-        // Renderiza os inputs dos times na tela de forma limpa
         function renderizarInputsTimes() {
             const wrapper = document.getElementById('container-times');
             wrapper.innerHTML = "";
             for (let i = 0; i < 5; i++) {
-                // Garante que se a posição não existir, usa uma cor neutra e nome vazio
                 const t = (configLocal.times && configLocal.times[i]) ? configLocal.times[i] : { nome: "", cor: "#cccccc" };
                 wrapper.innerHTML += `
                 <div class="row-time">
@@ -213,7 +206,7 @@
             }
         }
 
-        // Carrega dados existentes salvos no Firebase central
+        // CORRIGIDO: Vinculação correta dos novos IDs de inputs da modalidade
         async function carregarConfiguracoes() {
             try {
                 const doc = await db.collection("configuracoes").doc("geral").get();
@@ -221,29 +214,31 @@
                     configLocal = doc.data();
                 }
 
-                document.getElementById('c-taxa').value = configLocal.taxa !== undefined ? configLocal.taxa : 15;
+                document.getElementById('cfg-taxa').value = configLocal.taxa !== undefined ? configLocal.taxa : 15;
+                document.getElementById('cfg-mensalidade').value = configLocal.mensalidade !== undefined ? configLocal.mensalidade : 50;
+                document.getElementById('cfg-dia-limite').value = configLocal.diaLimite !== undefined ? configLocal.diaLimite : 10;
                 document.getElementById('c-jogadores').value = configLocal.jogadoresPorTime !== undefined ? configLocal.jogadoresPorTime : 11;
                 document.getElementById('c-emails').value = configLocal.emailsPermitidos ? configLocal.emailsPermitidos.join(', ') : "";
 
                 renderizarInputsTimes();
             } catch (error) {
                 console.error("Erro ao carregar configurações:", error);
-                renderizarInputsTimes(); // Fallback estrutural
+                renderizarInputsTimes();
             }
         }
 
-        // Salva as alterações da interface no banco de dados Firestore
+        // CORRIGIDO: Salvando no Firebase mapeando as chaves exatas que a index.html espera ler
         async function salvarConfiguracoes() {
-            const taxaValue = parseFloat(document.getElementById('c-taxa').value) || 0;
+            const taxaValue = parseFloat(document.getElementById('cfg-taxa').value) || 0;
+            const mensalidadeValue = parseFloat(document.getElementById('cfg-mensalidade').value) || 0;
+            const diaLimiteValue = parseInt(document.getElementById('cfg-dia-limite').value) || 10;
             const jogsValue = parseInt(document.getElementById('c-jogadores').value) || 11;
             const emailsRaw = document.getElementById('c-emails').value;
 
-            // Trata os emails digitados removendo espaços
             const emailsArray = emailsRaw.split(',')
                 .map(e => e.trim())
                 .filter(e => e.length > 0);
 
-            // Mapeia os inputs de cores e nomes customizados
             const novosTimes = [];
             for (let i = 0; i < 5; i++) {
                 const nomeT = document.getElementById(`t-nome-${i}`).value.trim();
@@ -251,21 +246,18 @@
                 novosTimes.push({ nome: nomeT, cor: corT });
             }
 
-            // Atualiza a nossa variável de controle local antes do upload
             configLocal = {
                 taxa: taxaValue,
+                mensalidade: mensalidadeValue,
+                diaLimite: diaLimiteValue,
                 jogadoresPorTime: jogsValue,
                 emailsPermitidos: emailsArray,
                 times: novosTimes
             };
 
             try {
-                // Salva no banco de dados
                 await db.collection("configuracoes").doc("geral").set(configLocal);
-
-                // Força a atualização visual imediata dos inputs
                 renderizarInputsTimes();
-
                 alert("✅ Configurações salvas com sucesso!");
             } catch (error) {
                 console.error("Erro ao salvar:", error);
@@ -273,28 +265,39 @@
             }
         }
 
-        // Função de limpeza do caixa migrada com segurança para esta tela
+        // AJUSTADO: Zera apenas o caixa diário da rodada, preservando os mensalistas quitados no mês
         async function limparCaixaGeral() {
-            if (!confirm("⚠️ ATENÇÃO: Deseja zerar os pagamentos e goleiros fixos de TODOS os atletas para iniciar um novo dia?")) return;
+            if (!confirm("⚠️ ATENÇÃO: Deseja zerar a lista de presença e pagamentos diários para uma nova rodada? (Mensalistas quitados continuarão confirmados)")) return;
             try {
                 const snap = await db.collection("jogadores").get();
                 const batch = db.batch();
+                
                 snap.docs.forEach(doc => {
-                    batch.update(db.collection("jogadores").doc(doc.id), {
-                        valorPago: 0, forma: "",
-                        valorPago2: 0, forma2: "",
-                        goleiro: false
-                    });
+                    const dados = doc.data();
+                    
+                    // Se for diarista, limpa tudo. Se for goleiro fixo ou mensalista, limpa apenas valores avulsos/presença extra
+                    if (dados.modalidade === "diaria") {
+                        batch.update(db.collection("jogadores").doc(doc.id), {
+                            valorPago: 0, forma: "",
+                            valorPago2: 0, forma2: "",
+                            goleiro: false
+                        });
+                    } else {
+                        // Reseta goleiros e valores adicionais, mas mantém a marcação da mensalidade se ela já existir
+                        batch.update(db.collection("jogadores").doc(doc.id), {
+                            goleiro: false
+                        });
+                    }
                 });
+                
                 await batch.commit();
-                alert("🔄 Caixa e presenças zeradas com sucesso!");
+                alert("🔄 Presenças diárias limpas com sucesso!");
             } catch (error) {
-                console.error("Erro ao zerar caixa:", error);
+                console.error("Erro ao zerar rodada:", error);
                 alert("❌ Erro ao limpar informações.");
             }
         }
 
-        // Segurança na visualização das configurações se o login cair
         firebase.auth().onAuthStateChanged(u => {
             if (!u) {
                 alert("Faça login na tela inicial primeiro!");
