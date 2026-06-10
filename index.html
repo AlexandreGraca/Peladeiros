@@ -417,29 +417,9 @@
             document.getElementById('tituloEspera').innerText = `Lista de Espera / Cadastro (${e})`;
         }
 
-        // ATUALIZADO: Regra inteligente baseada na localização atual do Mensalista
-        async function lidarCliqueJogador(id) {
-            const j = listaJogadores.find(x => x.id === id);
-            const isConfirmado = checarConfirmacao(j);
-
-            if (j.modalidade === "mensalista") {
-                if (isConfirmado) {
-                    // SE ESTIVER CONFIRMADO: Clicar nele desmarca a presença e joga para a lista de espera
-                    try {
-                        await db.collection("jogadores").doc(id).update({
-                            presencaRodada: false
-                        });
-                    } catch (error) {
-                        console.error("Erro ao mover mensalista para espera:", error);
-                    }
-                } else {
-                    // SE ESTIVER NA ESPERA: Abre o modal para receber o pagamento ou validar informações
-                    abrirEdicao(id);
-                }
-            } else {
-                // Diaristas normais continuam abrindo o modal sempre
-                abrirEdicao(id);
-            }
+        // Alterado de volta: Qualquer clique em qualquer estado abre o modal para manter o fluxo seguro e uniforme
+        function lidarCliqueJogador(id) {
+            abrirEdicao(id);
         }
 
         function atualizarPlaceholderValor() {
@@ -480,13 +460,19 @@
                 btnGoleiro.style.background = "white"; btnGoleiro.style.color = "#333"; btnGoleiro.style.borderColor = "#ddd";
             }
 
+            // ATUALIZADO: Lógica dinâmica do botão vermelho baseando-se em mensalistas com pagamento válido
             const btnExcluir = document.getElementById('btn-excluir-dinamico');
-            if (checarConfirmacao(j)) {
+            const isMensalistaPago = j.modalidade === "mensalista" && j.mesPago === getMesAnoAtual();
+
+            if (isMensalistaPago) {
+                btnExcluir.innerText = "🔄 ZERAR PAGAMENTO MENSAL";
+                btnExcluir.style.background = "#d35400"; // Laranja Escuro / Alerta de Reversão
+            } else if (checarConfirmacao(j)) {
                 btnExcluir.innerText = "🚫 REMOVER DA RODADA (RESETAR)";
-                btnExcluir.style.background = "#f39c12";
+                btnExcluir.style.background = "#f39c12"; // Amarelo/Laranja padrão de reset
             } else {
                 btnExcluir.innerText = "🗑️ EXCLUIR DO BANCO";
-                btnExcluir.style.background = "var(--danger)";
+                btnExcluir.style.background = "var(--danger)"; // Vermelho padrão
             }
 
             document.getElementById('modalPagamento').style.display = 'flex';
@@ -550,11 +536,22 @@
             }
         }        
 
+        // ATUALIZADO: Executa a ação exata baseada no texto ativo do botão dinâmico
         async function acaoExcluirDinamica() {
             const id = document.getElementById('editId').value;
             const j = listaJogadores.find(x => x.id === id);
+            const isMensalistaPago = j.modalidade === "mensalista" && j.mesPago === getMesAnoAtual();
 
-            if (checarConfirmacao(j)) {
+            if (isMensalistaPago) {
+                // NOVA AÇÃO: Limpa os dados do caixa do mês sem apagar o cadastro do atleta do sistema
+                if (confirm(`Deseja ZERAR o pagamento da mensalidade de ${j.nome}?\nO status dele voltará a ser Pendente no mês atual.`)) {
+                    await db.collection("jogadores").doc(id).update({
+                        valorPago: 0, forma: "", valorPago2: 0, forma2: "", mesPago: "", presencaRodada: false
+                    });
+                    fecharModal();
+                }
+            } else if (checarConfirmacao(j)) {
+                // Reseta diaristas normais da partida
                 if (confirm(`Remover confirmação de ${j.nome}? Os valores ou presenças serão limpos.`)) {
                     await db.collection("jogadores").doc(id).update({
                         valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, mesPago: "", presencaRodada: false
@@ -562,6 +559,7 @@
                     fecharModal();
                 }
             } else {
+                // Remove de vez do banco se estiver na lista de espera sem pagamentos vinculados
                 if (confirm(`Deseja EXCLUIR ${j.nome} do banco de dados permanentemente?`)) {
                     await db.collection("jogadores").doc(id).delete();
                     fecharModal();
