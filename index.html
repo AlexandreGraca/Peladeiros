@@ -95,7 +95,7 @@
             cursor: pointer;
             border: 1px solid #eee;
             transition: 0.2s;
-            user-select: none; /* Evita selecionar textos no duplo clique */
+            user-select: none;
         }
 
         .bg-confirmado {
@@ -302,7 +302,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         let listaJogadores = []; let timesAtuais = [];
-        let timerClique = null; // Controle interno para separar clique simples de duplo clique
 
         let configSistema = {
             taxa: 15,
@@ -338,7 +337,7 @@
                     if (configSistema.emailsPermitidos && configSistema.emailsPermitidos.length > 0) {
                         const emailUsuario = u.email.toLowerCase().trim();
                         const permitido = configSistema.emailsPermitidos.some(e => e.toLowerCase().trim() === emailUsuario);
-                        if (!permitted) {
+                        if (!permitido) {
                             alert("Acesso negado.");
                             logout();
                             return;
@@ -406,10 +405,7 @@
                 const textoLateral = isMensalistaPago ? "MENSAL (PAGO)" : (total > 0 ? 'R$ ' + total.toFixed(2) : '---');
                 const rotuloMod = j.modalidade === "mensalista" ? " Mensalista" : " Diarista";
                 
-                // Adicionado ondblclick para capturar o duplo clique de estorno/correção
-                const html = `<li class="player-item ${isC ? 'bg-confirmado' : 'bg-espera'}" 
-                    onclick="lidarCliqueJogador('${j.id}')" 
-                    ondblclick="lidarDuploCliqueJogador('${j.id}')">
+                const html = `<li class="player-item ${isC ? 'bg-confirmado' : 'bg-espera'}" onclick="lidarCliqueJogador('${j.id}')">
                     <div><strong>${prefixoGoleiro}${j.nome}</strong> ${idade ? `(${idade}a)` : ''} <span style="font-size:0.7rem; color:#888;">[${rotuloMod}]</span></div>
                     <div style="font-weight:bold; color:var(--accent)">${textoLateral}</div>
                 </li>`;
@@ -421,57 +417,27 @@
             document.getElementById('tituloEspera').innerText = `Lista de Espera / Cadastro (${e})`;
         }
 
-        // Modificado para coexistir em harmonia com o evento de duplo clique
-        function lidarCliqueJogador(id) {
-            if (timerClique) clearTimeout(timerClique);
-
-            // Aguarda 250ms para ter certeza que o usuário não vai clicar uma segunda vez
-            timerClique = setTimeout(async () => {
-                const j = listaJogadores.find(x => x.id === id);
-                const isMensalistaPago = j.modalidade === "mensalista" && j.mesPago === getMesAnoAtual();
-
-                if (isMensalistaPago) {
-                    const novoStatusPresenca = !(j.presencaRodada || false);
-                    try {
-                        await db.collection("jogadores").doc(id).update({ presencaRodada: novoStatusPresenca });
-                    } catch (error) {
-                        console.error("Erro ao alternar presença:", error);
-                    }
-                } else {
-                    abrirEdicao(id);
-                }
-            }, 250);
-        }
-
-        // NOVA ROTINA: Trata o duplo clique para apagar/estornar mensalidade lançada erroneamente
-        async function lidarDuploCliqueJogador(id) {
-            if (timerClique) clearTimeout(timerClique); // Cancela o efeito do clique único
-
+        // ATUALIZADO: Regra inteligente baseada na localização atual do Mensalista
+        async function lidarCliqueJogador(id) {
             const j = listaJogadores.find(x => x.id === id);
-            
-            // Só faz sentido estornar se ele for um mensalista com o mês corrente pago
-            if (j.modalidade === "mensalista" && j.mesPago === getMesAnoAtual()) {
-                const de FatoEstornar = confirm(`⚠️ ESTORNO FINANCEIRO:\nDeseja APAGAR o registro de mensalidade de "${j.nome}" deste mês? \n\nO status dele voltará para pendente.`);
-                
-                if (de FatoEstornar) {
+            const isConfirmado = checarConfirmacao(j);
+
+            if (j.modalidade === "mensalista") {
+                if (isConfirmado) {
+                    // SE ESTIVER CONFIRMADO: Clicar nele desmarca a presença e joga para a lista de espera
                     try {
                         await db.collection("jogadores").doc(id).update({
-                            mesPago: "",
-                            presencaRodada: false,
-                            valorPago: 0,
-                            forma: "",
-                            valorPago2: 0,
-                            forma2: ""
+                            presencaRodada: false
                         });
-                        alert("✅ Mensalidade estornada! O modal de edição abrirá para correções.");
-                        abrirEdicao(id); // Abre a tela para redefinir os dados certos
                     } catch (error) {
-                        console.error("Erro ao apagar mensalidade:", error);
-                        alert("Erro ao tentar estornar os dados.");
+                        console.error("Erro ao mover mensalista para espera:", error);
                     }
+                } else {
+                    // SE ESTIVER NA ESPERA: Abre o modal para receber o pagamento ou validar informações
+                    abrirEdicao(id);
                 }
             } else {
-                // Se for diarista ou não tiver pago, o duplo clique apenas abre a edição padrão
+                // Diaristas normais continuam abrindo o modal sempre
                 abrirEdicao(id);
             }
         }
