@@ -108,6 +108,13 @@
             border-left: 5px solid #bdc3c7;
         }
 
+        /* NOVA REGRA VISUAL: Linha vermelha para quem pagou no crédito */
+        .bg-credito {
+            background: #fdeae8 !important;
+            border-left: 5px solid var(--danger) !important;
+            border-color: #f5c2be !important;
+        }
+
         .actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -323,6 +330,12 @@
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         }
 
+        // Retorna a data no formato simplificado YYYY-MM-DD para controle de caixa diário
+        function getDataFormatadaDoc() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
         function loginGoogle() { firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
         function logout() { firebase.auth().signOut(); window.location.reload(); }
 
@@ -365,7 +378,7 @@
             }
             await db.collection("jogadores").add({ 
                 nome: n, valorPago: 0, forma: "", valorPago2: 0, forma2: "", 
-                goleiro: false, nivel: 3, nascimento: "", modalidade: "diaria", mesPago: "", presencaRodada: false
+                goleiro: false, nivel: 3, nascimento: "", modalidade: "diaria", mesPago: "", presencaRodada: false, dataPagamento: ""
             });
             document.getElementById('inNome').value = "";
         }
@@ -405,9 +418,13 @@
                 const textoLateral = isMensalistaPago ? "MENSAL (PAGO)" : (total > 0 ? 'R$ ' + total.toFixed(2) : '---');
                 const rotuloMod = j.modalidade === "mensalista" ? " Mensalista" : " Diarista";
                 
-                const html = `<li class="player-item ${isC ? 'bg-confirmado' : 'bg-espera'}" onclick="lidarCliqueJogador('${j.id}')">
+                // Valida se qualquer um dos métodos de pagamento inseridos foi Crédito
+                const temCredito = j.forma === "Crédito" || j.forma2 === "Crédito";
+                const classeCorFundo = temCredito ? 'bg-credito' : (isC ? 'bg-confirmado' : 'bg-espera');
+
+                const html = `<li class="player-item ${classeCorFundo}" onclick="lidarCliqueJogador('${j.id}')">
                     <div><strong>${prefixoGoleiro}${j.nome}</strong> ${idade ? `(${idade}a)` : ''} <span style="font-size:0.7rem; color:#888;">[${rotuloMod}]</span></div>
-                    <div style="font-weight:bold; color:var(--accent)">${textoLateral}</div>
+                    <div style="font-weight:bold; color:${temCredito ? 'var(--danger)' : 'var(--accent)'}">${textoLateral}</div>
                 </li>`;
 
                 if (isC) { lc.innerHTML += html; c++; } else { le.innerHTML += html; e++; }
@@ -417,7 +434,6 @@
             document.getElementById('tituloEspera').innerText = `Lista de Espera / Cadastro (${e})`;
         }
 
-        // Alterado de volta: Qualquer clique em qualquer estado abre o modal para manter o fluxo seguro e uniforme
         function lidarCliqueJogador(id) {
             abrirEdicao(id);
         }
@@ -460,19 +476,18 @@
                 btnGoleiro.style.background = "white"; btnGoleiro.style.color = "#333"; btnGoleiro.style.borderColor = "#ddd";
             }
 
-            // ATUALIZADO: Lógica dinâmica do botão vermelho baseando-se em mensalistas com pagamento válido
             const btnExcluir = document.getElementById('btn-excluir-dinamico');
             const isMensalistaPago = j.modalidade === "mensalista" && j.mesPago === getMesAnoAtual();
 
             if (isMensalistaPago) {
                 btnExcluir.innerText = "🔄 ZERAR PAGAMENTO MENSAL";
-                btnExcluir.style.background = "#d35400"; // Laranja Escuro / Alerta de Reversão
+                btnExcluir.style.background = "#d35400"; 
             } else if (checarConfirmacao(j)) {
                 btnExcluir.innerText = "🚫 REMOVER DA RODADA (RESETAR)";
-                btnExcluir.style.background = "#f39c12"; // Amarelo/Laranja padrão de reset
+                btnExcluir.style.background = "#f39c12"; 
             } else {
                 btnExcluir.innerText = "🗑️ EXCLUIR DO BANCO";
-                btnExcluir.style.background = "var(--danger)"; // Vermelho padrão
+                btnExcluir.style.background = "var(--danger)"; 
             }
 
             document.getElementById('modalPagamento').style.display = 'flex';
@@ -523,9 +538,13 @@
                     goleiro: isGoleiro
                 };
 
-                if (modSelected === "mensalista" && totalDigitado > 0) {
+                // MODIFICADO: Se for mensalista, o ato de salvar garante a presencaRodada true (vai direto para os confirmados)
+                if (modSelected === "mensalista") {
                     dadosParaSalvar.mesPago = getMesAnoAtual();
                     dadosParaSalvar.presencaRodada = true; 
+                    // Se estiver injetando dinheiro/pago agora, carimba com a data de hoje. Caso contrário mantém a antiga se houver
+                    const jogOrig = listaJogadores.find(x => x.id === id);
+                    dadosParaSalvar.dataPagamento = totalDigitado > 0 ? getDataFormatadaDoc() : (jogOrig.dataPagamento || getDataFormatadaDoc());
                 }
 
                 await db.collection("jogadores").doc(id).update(dadosParaSalvar);
@@ -536,30 +555,26 @@
             }
         }        
 
-        // ATUALIZADO: Executa a ação exata baseada no texto ativo do botão dinâmico
         async function acaoExcluirDinamica() {
             const id = document.getElementById('editId').value;
             const j = listaJogadores.find(x => x.id === id);
             const isMensalistaPago = j.modalidade === "mensalista" && j.mesPago === getMesAnoAtual();
 
             if (isMensalistaPago) {
-                // NOVA AÇÃO: Limpa os dados do caixa do mês sem apagar o cadastro do atleta do sistema
                 if (confirm(`Deseja ZERAR o pagamento da mensalidade de ${j.nome}?\nO status dele voltará a ser Pendente no mês atual.`)) {
                     await db.collection("jogadores").doc(id).update({
-                        valorPago: 0, forma: "", valorPago2: 0, forma2: "", mesPago: "", presencaRodada: false
+                        valorPago: 0, forma: "", valorPago2: 0, forma2: "", mesPago: "", presencaRodada: false, dataPagamento: ""
                     });
                     fecharModal();
                 }
             } else if (checarConfirmacao(j)) {
-                // Reseta diaristas normais da partida
                 if (confirm(`Remover confirmação de ${j.nome}? Os valores ou presenças serão limpos.`)) {
                     await db.collection("jogadores").doc(id).update({
-                        valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, mesPago: "", presencaRodada: false
+                        valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, mesPago: "", presencaRodada: false, dataPagamento: ""
                     });
                     fecharModal();
                 }
             } else {
-                // Remove de vez do banco se estiver na lista de espera sem pagamentos vinculados
                 if (confirm(`Deseja EXCLUIR ${j.nome} do banco de dados permanentemente?`)) {
                     await db.collection("jogadores").doc(id).delete();
                     fecharModal();
@@ -648,20 +663,32 @@
             });
         }
 
+        // MODIFICADO: Relatório agora só computa quem pagou HOJE na pelada
         function gerarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const dataF = new Date().toLocaleDateString('pt-BR');
+            const hojeF = getDataFormatadaDoc();
             
             doc.setFontSize(16);
-            doc.text(`Relatório Financeiro - ${dataF}`, 14, 20);
+            doc.text(`Relatório Financeiro da Partida - ${dataF}`, 14, 20);
 
             let tPix = 0, tDin = 0, tCre = 0, tGer = 0;
-            const pagantes = listaJogadores.filter(j => (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0) > 0);
+            
+            // FILTRO ESTRETO: Diaristas com saldo OU mensalistas cujos pagamentos foram validados HOJE
+            const pagantesDoDia = listaJogadores.filter(j => {
+                const temValor = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0) > 0;
+                if (j.modalidade === "mensalista") {
+                    return temValor && j.dataPagamento === hojeF;
+                }
+                return temValor;
+            });
 
-            if (pagantes.length === 0) { return alert("Não há pagamentos para gerar o relatório."); }
+            if (pagantesDoDia.length === 0) { 
+                return alert("Não constam novos pagamentos realizados no dia de hoje."); 
+            }
 
-            const body = pagantes.map(j => {
+            const body = pagantesDoDia.map(j => {
                 const v1 = parseFloat(j.valorPago) || 0;
                 const v2 = parseFloat(j.valorPago2) || 0;
                 const f1 = j.forma || "Não inf.";
@@ -693,7 +720,7 @@
                 headStyles: { fillColor: [39, 174, 96] }
             });
 
-            doc.save(`Financeiro_${dataF.replace(/\//g, '-')}.pdf`);
+            doc.save(`Financeiro_Pelada_${dataF.replace(/\//g, '-')}.pdf`);
         }
 
         function enviarWhatsApp() {
