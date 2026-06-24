@@ -715,64 +715,167 @@
             });
         }
 
-        function gerarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const dataF = new Date().toLocaleDateString('pt-BR');
-            const hojeF = getDataFormatadaDoc();
-            
-            doc.setFontSize(16);
-            doc.text(`Relatório Financeiro da Partida - ${dataF}`, 14, 20);
+function gerarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
 
-            let tPix = 0, tDin = 0, tCre = 0, tGer = 0;
-            
-            const pagantesDoDia = listaJogadores.filter(j => {
-                const temValor = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0) > 0;
-                if (j.modalidade === "mensalista") {
-                    return temValor && j.dataPagamento === hojeF;
-                }
-                return temValor;
-            });
+    const dataF = new Date().toLocaleDateString('pt-BR');
+    const hojeF = getDataFormatadaDoc();
 
-            if (pagantesDoDia.length === 0) { 
-                return alert("Não constam novos pagamentos realizados no dia de hoje."); 
-            }
+    doc.setFontSize(16);
+    doc.text(`Relatório Financeiro da Partida - ${dataF}`, 14, 20);
 
-            const body = pagantesDoDia.map(j => {
-                const v1 = parseFloat(j.valorPago) || 0;
-                const v2 = parseFloat(j.valorPago2) || 0;
-                const f1 = j.forma || "Não inf.";
-                const f2 = j.forma2 || "";
-                const total = v1 + v2;
+    let tPix = 0;
+    let tDin = 0;
+    let tCre = 0;
+    let tGer = 0;
 
-                [ {v: v1, f: f1}, {v: v2, f: f2} ].forEach(p => {
-                    if (p.f === "Pix") tPix += p.v;
-                    else if (p.f === "Dinheiro") tDin += p.v;
-                    else if (p.f === "Crédito") tCre += p.v;
-                });
-                tGer += total;
-                const modalidadeTxt = j.modalidade === "mensalista" ? " (Mensal)" : " (Diária)";
-                return [j.nome + modalidadeTxt, f2 ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}` : `${f1}: R$${v1.toFixed(2)}`, `R$ ${total.toFixed(2)}`];
-            });
+    const pagantesDoDia = listaJogadores.filter(j => {
+        const temValor =
+            (parseFloat(j.valorPago) || 0) +
+            (parseFloat(j.valorPago2) || 0) > 0;
 
-            doc.autoTable({
-                startY: 25,
-                head: [['Jogador', 'Detalhamento', 'Total']],
-                body: body,
-                headStyles: { fillColor: [44, 62, 80] }
-            });
-
-            doc.autoTable({
-                startY: doc.lastAutoTable.finalY + 10,
-                head: [['Modalidade', 'Total']],
-                body: [['PIX', `R$ ${tPix.toFixed(2)}`], ['DINHEIRO', `R$ ${tDin.toFixed(2)}`], ['CRÉDITO', `R$ ${tCre.toFixed(2)}`], ['TOTAL GERAL', `R$ ${tGer.toFixed(2)}`]],
-                theme: 'striped',
-                headStyles: { fillColor: [39, 174, 96] }
-            });
-
-            doc.save(`Financeiro_Pelada_${dataF.replace(/\//g, '-')}.pdf`);
+        if (j.modalidade === "mensalista") {
+            return temValor && j.dataPagamento === hojeF;
         }
 
+        return temValor;
+    });
+
+    if (pagantesDoDia.length === 0) {
+        return alert("Não constam novos pagamentos realizados no dia de hoje.");
+    }
+
+    const body = pagantesDoDia.map(j => {
+
+        const v1 = parseFloat(j.valorPago) || 0;
+        const v2 = parseFloat(j.valorPago2) || 0;
+
+        const f1 = j.forma || "Não inf.";
+        const f2 = j.forma2 || "";
+
+        const total = v1 + v2;
+
+        [{ v: v1, f: f1 }, { v: v2, f: f2 }].forEach(p => {
+            if (p.f === "Pix") tPix += p.v;
+            else if (p.f === "Dinheiro") tDin += p.v;
+            else if (p.f === "Crédito") tCre += p.v;
+        });
+
+        tGer += total;
+
+        const modalidadeTxt =
+            j.modalidade === "mensalista"
+                ? " (Mensal)"
+                : " (Diária)";
+
+        let corLinha = "PRETO";
+
+        const formas = [f1, f2].filter(Boolean);
+
+        if (formas.length > 1) {
+            corLinha = "MISTO";
+        } else if (f1 === "Pix") {
+            corLinha = "PIX";
+        } else if (f1 === "Dinheiro") {
+            corLinha = "DINHEIRO";
+        } else if (f1 === "Crédito") {
+            corLinha = "CREDITO";
+        }
+
+        return [
+            j.nome + modalidadeTxt,
+            f2
+                ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}`
+                : `${f1}: R$${v1.toFixed(2)}`,
+            `R$ ${total.toFixed(2)}`,
+            corLinha
+        ];
+    });
+
+    doc.autoTable({
+        startY: 25,
+
+        head: [['Jogador', 'Detalhamento', 'Total']],
+
+        body: body.map(l => [l[0], l[1], l[2]]),
+
+        headStyles: {
+            fillColor: [44, 62, 80]
+        },
+
+        didParseCell: function (data) {
+
+            if (data.section !== 'body') return;
+
+            const tipo = body[data.row.index][3];
+
+            if (tipo === "PIX") {
+                data.cell.styles.textColor = [0, 102, 204];
+                data.cell.styles.fontStyle = 'bold';
+            }
+            else if (tipo === "DINHEIRO") {
+                data.cell.styles.textColor = [0, 128, 0];
+                data.cell.styles.fontStyle = 'bold';
+            }
+            else if (tipo === "CREDITO") {
+                data.cell.styles.textColor = [220, 53, 69];
+                data.cell.styles.fontStyle = 'bold';
+            }
+            else if (tipo === "MISTO") {
+                data.cell.styles.textColor = [128, 0, 128];
+                data.cell.styles.fontStyle = 'bold';
+            }
+        }
+    });
+
+    doc.autoTable({
+        startY: doc.lastAutoTable.finalY + 12,
+
+        head: [['Modalidade', 'Total']],
+
+        body: [
+            ['PIX', `R$ ${tPix.toFixed(2)}`],
+            ['DINHEIRO', `R$ ${tDin.toFixed(2)}`],
+            ['CRÉDITO', `R$ ${tCre.toFixed(2)}`],
+            ['TOTAL GERAL', `R$ ${tGer.toFixed(2)}`]
+        ],
+
+        theme: 'striped',
+
+        headStyles: {
+            fillColor: [39, 174, 96]
+        },
+
+        didParseCell: function (data) {
+
+            if (data.section !== 'body') return;
+
+            const modalidade = data.row.raw[0];
+
+            if (modalidade === 'PIX') {
+                data.cell.styles.textColor = [0, 102, 204];
+                data.cell.styles.fontStyle = 'bold';
+            }
+            else if (modalidade === 'DINHEIRO') {
+                data.cell.styles.textColor = [0, 128, 0];
+                data.cell.styles.fontStyle = 'bold';
+            }
+            else if (modalidade === 'CRÉDITO') {
+                data.cell.styles.textColor = [220, 53, 69];
+                data.cell.styles.fontStyle = 'bold';
+            }
+            else if (modalidade === 'TOTAL GERAL') {
+                data.cell.styles.textColor = [0, 0, 0];
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.fontSize = 12;
+            }
+        }
+    });
+
+    doc.save(`Financeiro_Pelada_${dataF.replace(/\//g, '-')}.pdf`);
+}
+        
         function enviarWhatsApp() {
             if (!timesAtuais.length) return alert("Sorteie primeiro!");
             const agora = new Date();
