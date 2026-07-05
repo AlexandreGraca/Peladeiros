@@ -649,6 +649,68 @@
             }
         }
 
+        function carregarTimesSalvos() {
+
+            db.collection("configuracoes")
+                .doc("timesSorteados")
+                .onSnapshot(doc => {
+
+                    if (!doc.exists) {
+                        document.getElementById("times").innerHTML = "";
+                        timesAtuais = [];
+                        return;
+                    }
+
+                    const dados = doc.data();
+
+                    if (!dados.ativo) {
+                        document.getElementById("times").innerHTML = "";
+                        timesAtuais = [];
+                        return;
+                    }
+
+                    mostrarTimes();
+
+                });
+
+        }
+
+        function mostrarTimes() {
+
+            const box = document.getElementById("times");
+
+            const total = timesAtuais.reduce((soma, t) => soma + t.membros.length, 0);
+
+            box.innerHTML = `<h3>Times Sorteados (${total} jogadores)</h3>`;
+
+            timesAtuais.forEach(t => {
+
+                const medI = t.idades.length
+                    ? (t.somaIdade / t.idades.length).toFixed(1)
+                    : "N/A";
+
+                const forca = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
+
+                box.innerHTML += `
+            <div class="card-time" style="border-left:10px solid ${t.cor}">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <strong style="color:${t.cor}">${t.nome}</strong>
+
+                    <div>
+                        <span class="badge-info">👥 ${t.membros.length} Jogs</span>
+                        <span class="badge-info">🎂 Méd: ${medI}a</span>
+                        <span class="badge-info">⭐ Força: ${forca}</span>
+                    </div>
+                </div>
+
+                <div style="margin-top:8px;font-size:0.85rem;">
+                    ${t.membros.join("<br>")}
+                </div>
+            </div>`;
+            });
+
+        }
+
         function fecharModal() { document.getElementById('modalPagamento').style.display = 'none'; }
 
         function toggleGoleiro() {
@@ -669,7 +731,33 @@
             }
         }
 
+        async function zerarTimes() {
+
+            if (!confirm("Deseja encerrar este sorteio?"))
+                return;
+
+            await db.collection("configuracoes")
+                .doc("timesSorteados")
+                .update({
+                    ativo: false
+                });
+
+            timesAtuais = [];
+
+            document.getElementById("times").innerHTML = "";
+
+            alert("Sorteio encerrado.");
+        }
         async function sortear() {
+
+            const doc = await db.collection("configuracoes")
+                .doc("timesSorteados")
+                .get();
+
+            if (doc.exists && doc.data().ativo) {
+                alert("Já existe um sorteio ativo. Clique em 'Zerar Times' antes de realizar outro.");
+                return;
+            }
 
             const porTime = configSistema.jogadoresPorTime || 11;
             const minJogadores = porTime * 2;
@@ -748,47 +836,18 @@
 
             });
 
-            // Exibe na tela
-            const box = document.getElementById("times");
-
-            box.innerHTML = `<h3>Times Sorteados (${total} jogadores)</h3>`;
-
-            timesAtuais.forEach(t => {
-
-                const medI = t.idades.length
-                    ? (t.somaIdade / t.idades.length).toFixed(1)
-                    : "N/A";
-
-                const forca = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
-
-                box.innerHTML += `
-            <div class="card-time" style="border-left:10px solid ${t.cor}">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <strong style="color:${t.cor}">${t.nome}</strong>
-
-                    <div>
-                        <span class="badge-info">👥 ${t.membros.length} Jogs</span>
-                        <span class="badge-info">🎂 Méd: ${medI}a</span>
-                        <span class="badge-info">⭐ Força: ${forca}</span>
-                    </div>
-                </div>
-
-                <div style="margin-top:8px;font-size:0.85rem;">
-                    ${t.membros.join("<br>")}
-                </div>
-            </div>`;
-            });
-
-            // ===== SALVA O SORTEIO NO FIRESTORE =====
             try {
 
                 await db.collection("configuracoes")
                     .doc("timesSorteados")
                     .set({
+                        ativo: true,
                         data: firebase.firestore.FieldValue.serverTimestamp(),
                         totalJogadores: total,
                         times: timesAtuais
                     });
+
+                mostrarTimes();
 
                 console.log("Times salvos com sucesso!");
 
@@ -801,60 +860,7 @@
 
         }
 
-        function carregarTimesSalvos() {
 
-            db.collection("configuracoes")
-                .doc("timesSorteados")
-                .get()
-                .then(doc => {
-
-                    if (!doc.exists) return;
-
-                    const dados = doc.data();
-
-                    if (!dados.times || !dados.times.length) return;
-
-                    timesAtuais = dados.times;
-
-                    const total = dados.totalJogadores ||
-                        timesAtuais.reduce((soma, t) => soma + t.membros.length, 0);
-
-                    const box = document.getElementById("times");
-
-                    box.innerHTML = `<h3>Times Sorteados (${total} jogadores)</h3>`;
-
-                    timesAtuais.forEach(t => {
-
-                        const medI = t.idades.length
-                            ? (t.somaIdade / t.idades.length).toFixed(1)
-                            : "N/A";
-
-                        const forca = (t.somaNivel / (t.membros.length || 1)).toFixed(1);
-
-                        box.innerHTML += `
-                    <div class="card-time" style="border-left:10px solid ${t.cor}">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <strong style="color:${t.cor}">${t.nome}</strong>
-
-                            <div>
-                                <span class="badge-info">👥 ${t.membros.length} Jogs</span>
-                                <span class="badge-info">🎂 Méd: ${medI}a</span>
-                                <span class="badge-info">⭐ Força: ${forca}</span>
-                            </div>
-                        </div>
-
-                        <div style="margin-top:8px;font-size:0.85rem;">
-                            ${t.membros.join("<br>")}
-                        </div>
-                    </div>`;
-                    });
-
-                })
-                .catch(err => {
-                    console.error("Erro ao carregar times:", err);
-                });
-
-        }
 
         function gerarPDF() {
             const { jsPDF } = window.jspdf;
