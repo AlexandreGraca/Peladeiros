@@ -13,7 +13,8 @@ import {
   query,
   orderBy,
   where,
-  limit
+  limit,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
@@ -84,19 +85,15 @@ export const db = {
       };
 
       return {
-        // Suporte para filtro: .where("campo", "==", "valor")
         where: (field, op, value) => {
           return criarQueryEncadeada([...constraints, where(field, op, value)]);
         },
-        // Suporte para ordenação: .orderBy("campo", "asc/desc")
         orderBy: (field, direction = "asc") => {
           return criarQueryEncadeada([...constraints, orderBy(field, direction)]);
         },
-        // Suporte para limite: .limit(numero)
         limit: (num) => {
           return criarQueryEncadeada([...constraints, limit(num)]);
         },
-        // Métodos de execução
         ...criarExecutorBusca(construirFiltros())
       };
     };
@@ -104,7 +101,6 @@ export const db = {
     return {
       add: (data) => addDoc(colRef, data),
       
-      // Expõe os métodos diretamente a partir da coleção básica
       where: (field, op, value) => criarQueryEncadeada([where(field, op, value)]),
       orderBy: (field, direction = "asc") => criarQueryEncadeada([orderBy(field, direction)]),
       limit: (num) => criarQueryEncadeada([limit(num)]),
@@ -116,6 +112,8 @@ export const db = {
         return {
           update: (data) => updateDoc(docRef, data),
           delete: () => deleteDoc(docRef),
+          // Suporte adicionado para o salvamento de configurações: .set(data)
+          set: (data) => setDoc(docRef, data),
           get: async () => {
             const docSnap = await getDoc(docRef);
             return {
