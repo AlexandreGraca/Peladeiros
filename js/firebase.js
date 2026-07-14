@@ -6,12 +6,12 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC9Vtx2SWictAPtLx6WGmVWUMA-EX_zuAY",
-  authDomain: "dbpeladeiros.firebaseapp.com",
-  projectId: "dbpeladeiros",
-  storageBucket: "dbpeladeiros.firebasestorage.app",
-  messagingSenderId: "460398325975",
-  appId: "1:460398325975:web:b382791c2d132d1a3d0092"
+  apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
+    authDomain: "dbpeladeiros.firebaseapp.com",
+    projectId: "dbpeladeiros",
+    storageBucket: "dbpeladeiros.firebasestorage.app",
+    messagingSenderId: "460398325975",
+    appId: "1:460398325975:web:b382791c2d132d1a3d0092"
 };
 
 // 2. Inicializa o Firebase garantindo que não haja duplicidade de instâncias
