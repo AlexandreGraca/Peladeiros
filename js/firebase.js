@@ -14,7 +14,9 @@ import {
   orderBy,
   where,
   limit,
-  setDoc
+  setDoc,
+  serverTimestamp,
+  Timestamp
 } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
@@ -112,7 +114,6 @@ export const db = {
         return {
           update: (data) => updateDoc(docRef, data),
           delete: () => deleteDoc(docRef),
-          // Suporte adicionado para o salvamento de configurações: .set(data)
           set: (data) => setDoc(docRef, data),
           get: async () => {
             const docSnap = await getDoc(docRef);
@@ -135,6 +136,20 @@ export const db = {
       }
     };
   }
+};
+
+// Exportações explícitas das referências corretas de data e hora do Firebase Modular
+export const firebaseFieldValue = {
+  serverTimestamp: serverTimestamp
+};
+
+export const firebaseTimestamp = Timestamp;
+
+// Exportações globais redundantes para segurança de outros arquivos legado
+window.firebase = window.firebase || {};
+window.firebase.firestore = {
+  FieldValue: firebaseFieldValue,
+  Timestamp: firebaseTimestamp
 };
 
 export const auth = getAuth(app);
