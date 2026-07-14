@@ -11,7 +11,8 @@ import {
   getDocs, 
   onSnapshot,
   query,
-  orderBy
+  orderBy,
+  where
 } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
@@ -27,7 +28,7 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const firestoreInstance = getFirestore(app);
 
-// Função auxiliar para gerar os métodos executáveis (.get e .onSnapshot) a partir de uma referência de busca
+// Função auxiliar para gerar executores a partir de uma query construída
 const criarExecutorBusca = (targetRef) => {
   return {
     get: async () => {
@@ -69,23 +70,39 @@ const criarExecutorBusca = (targetRef) => {
   };
 };
 
-// Adaptador de compatibilidade completo (Traduz v8 para v9 modular)
+// Adaptador de compatibilidade completo (v8 para v9 modular)
 export const db = {
   raw: firestoreInstance,
   collection: (path) => {
     const colRef = collection(firestoreInstance, path);
     
-    // Retorna as funções base da coleção, mais o método de ordenação encadeado
+    // Função interna que permite acumular filtros e ordenações de forma encadeada
+    const criarQueryEncadeada = (constraints = []) => {
+      const construirFiltros = () => {
+        return constraints.length > 0 ? query(colRef, ...constraints) : colRef;
+      };
+
+      return {
+        // Suporte para filtro: .where("campo", "==", "valor")
+        where: (field, op, value) => {
+          return criarQueryEncadeada([...constraints, where(field, op, value)]);
+        },
+        // Suporte para ordenação: .orderBy("campo", "asc/desc")
+        orderBy: (field, direction = "asc") => {
+          return criarQueryEncadeada([...constraints, orderBy(field, direction)]);
+        },
+        // Métodos de execução
+        ...criarExecutorBusca(construirFiltros())
+      };
+    };
+
     return {
       add: (data) => addDoc(colRef, data),
       
-      // Suporte para ordenação: db.collection("jogadores").orderBy("nome")
-      orderBy: (field, direction = "asc") => {
-        const q = query(colRef, orderBy(field, direction));
-        return criarExecutorBusca(q);
-      },
+      // Expõe os métodos diretamente a partir da coleção
+      where: (field, op, value) => criarQueryEncadeada([where(field, op, value)]),
+      orderBy: (field, direction = "asc") => criarQueryEncadeada([orderBy(field, direction)]),
       
-      // Métodos diretos sem ordenação prévia
       ...criarExecutorBusca(colRef),
       
       doc: (id) => {
