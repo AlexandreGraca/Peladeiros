@@ -34,16 +34,17 @@ export const FinanceiroView = {
 
                     <!-- Grid de métodos de pagamento -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+
                         <!-- PIX -->
-                        <div style="background: white; border: 1px solid #eee; border-left: 5px solid #27ae60; padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <div style="background: white; border: 1px solid #eee; border-left: 5px solid #2761ae; padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                             <span style="font-size: 0.75rem; color: #7f8c8d; font-weight: bold; display: block;">❖ PIX</span>
-                            <h3 style="margin: 5px 0 0 0; color: #27ae60; font-size: 1.2rem;">R$ ${fin.totalPix.toFixed(2)}</h3>
+                            <h3 style="margin: 5px 0 0 0; color: #2761ae; font-size: 1.2rem;">R$ ${fin.totalPix.toFixed(2)}</h3>
                         </div>
 
                         <!-- DINHEIRO -->
-                        <div style="background: white; border: 1px solid #eee; border-left: 5px solid #f1c40f; padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                        <div style="background: white; border: 1px solid #eee; border-left: 5px solid #0ff11a; padding: 12px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
                             <span style="font-size: 0.75rem; color: #7f8c8d; font-weight: bold; display: block;">💲 Dinheiro</span>
-                            <h3 style="margin: 5px 0 0 0; color: #d4ac0d; font-size: 1.2rem;">R$ ${fin.totalDinheiro.toFixed(2)}</h3>
+                            <h3 style="margin: 5px 0 0 0; color: #0dd40d; font-size: 1.2rem;">R$ ${fin.totalDinheiro.toFixed(2)}</h3>
                         </div>
 
                         <!-- DEVEDORES / CRÉDITO -->
