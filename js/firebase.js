@@ -12,7 +12,8 @@ import {
   onSnapshot,
   query,
   orderBy,
-  where
+  where,
+  limit
 } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
@@ -76,7 +77,7 @@ export const db = {
   collection: (path) => {
     const colRef = collection(firestoreInstance, path);
     
-    // Função interna que permite acumular filtros e ordenações de forma encadeada
+    // Função interna que permite acumular filtros, ordenações e limites de forma encadeada
     const criarQueryEncadeada = (constraints = []) => {
       const construirFiltros = () => {
         return constraints.length > 0 ? query(colRef, ...constraints) : colRef;
@@ -91,6 +92,10 @@ export const db = {
         orderBy: (field, direction = "asc") => {
           return criarQueryEncadeada([...constraints, orderBy(field, direction)]);
         },
+        // Suporte para limite: .limit(numero)
+        limit: (num) => {
+          return criarQueryEncadeada([...constraints, limit(num)]);
+        },
         // Métodos de execução
         ...criarExecutorBusca(construirFiltros())
       };
@@ -99,9 +104,10 @@ export const db = {
     return {
       add: (data) => addDoc(colRef, data),
       
-      // Expõe os métodos diretamente a partir da coleção
+      // Expõe os métodos diretamente a partir da coleção básica
       where: (field, op, value) => criarQueryEncadeada([where(field, op, value)]),
       orderBy: (field, direction = "asc") => criarQueryEncadeada([orderBy(field, direction)]),
+      limit: (num) => criarQueryEncadeada([limit(num)]),
       
       ...criarExecutorBusca(colRef),
       
