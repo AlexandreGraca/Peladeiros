@@ -6,7 +6,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
+    apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
     authDomain: "dbpeladeiros.firebaseapp.com",
     projectId: "dbpeladeiros",
     storageBucket: "dbpeladeiros.firebasestorage.app",
