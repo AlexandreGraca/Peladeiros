@@ -4,7 +4,7 @@ import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc } from "htt
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC9Vtx2SWictAPtLx6WGmVWUMA-EX_zuAY",
+  apiKey: "AIzaSyAgLwyaeXK0tChW3sndo4dpXrjG1LFLVnk",
   authDomain: "dbpeladeiros.firebaseapp.com",
   projectId: "dbpeladeiros",
   storageBucket: "dbpeladeiros.firebasestorage.app",
