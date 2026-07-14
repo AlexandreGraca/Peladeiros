@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações do Sistema - Peladeiros</title>
+    
+    <!-- 🎨 Folha de Estilos Unificada -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <!-- 🚀 Inicialização Segura do Firebase -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
+            authDomain: "dbpeladeiros.firebaseapp.com",
+            projectId: "dbpeladeiros",
+            storageBucket: "dbpeladeiros.firebasestorage.app",
+            messagingSenderId: "460398325975",
+            appId: "1:460398325975:web:b382791c2d132d1a3d0092"
+        };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        var db = firebase.firestore();
+    </script>
+</head>
+
+<body>
+
+    <div class="container" style="margin-top: 20px;">
+        <header>
+            <h2 style="margin: 0;">⚙️ Configurações</h2>
+            <p style="font-size: 0.85rem; color: #7f8c8d; margin: 5px 0 0 0;">Ajustes gerais do sorteio e acessos.</p>
+        </header>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+        <!-- Seção de Valores -->
+        <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:15px; border:1px solid #ddd;">
+            <h3 style="margin-top:0; color: var(--primary);">💰 Valores e Regras de Pagamento</h3>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-weight:bold; display:block; margin-bottom: 5px;">Taxa Diária (R$):</label>
+                <input type="number" id="cfg-taxa" class="auth-input" placeholder="Ex: 15">
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-weight:bold; display:block; margin-bottom: 5px;">Mensalidade Fixa (R$):</label>
+                <input type="number" id="cfg-mensalidade" class="auth-input" placeholder="Ex: 50">
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="font-weight:bold; display:block; margin-bottom: 5px;">Dia Limite para Mensalistas (1 a 31):</label>
+                <input type="number" id="cfg-dia-limite" class="auth-input" min="1" max="31" placeholder="Ex: 10">
+            </div>
+        </div>
+
+        <!-- Atletas por equipe -->
+        <div style="margin-bottom: 15px;">
+            <label style="font-weight:bold; display:block; margin-bottom: 5px;">👥 Atletas por Equipe</label>
+            <input type="number" id="c-jogadores" class="auth-input" min="5" max="11" placeholder="Ex: 11">
+            <span style="font-size: 0.75rem; color: #7f8c8d;">Quantidade padrão de membros em linha + goleiro por time.</span>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+        
+        <!-- E-mails autorizados -->
+        <div style="margin-bottom: 15px;">
+            <label style="font-weight:bold; display:block; margin-bottom: 5px;">🔒 E-mails com Acesso Administrativo</label>
+            <textarea id="c-emails" class="auth-input" rows="3" placeholder="admin@email.com, fulano@email.com" style="width: 100%; font-family: inherit; resize: vertical;"></textarea>
+            <span style="font-size: 0.75rem; color: #7f8c8d;">Separe os e-mails autorizados usando vírgulas (,). Se deixar vazio, qualquer login do Google cadastrado poderá entrar.</span>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+        
+        <!-- Cores e nomes de Times -->
+        <h3 style="color: var(--primary); margin-top: 0;">🎨 Nomes e Cores dos Times</h3>
+        <p style="font-size: 0.75rem; color: #7f8c8d; margin-top: -5px; margin-bottom: 15px;">Configure até 5 times disponíveis para ordenação do sorteio.</p>
+
+        <div id="container-times"></div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        
+        <!-- Botões de Ação -->
+        <button class="btn-action btn-draw" id="btn-salvar-config" style="width: 100%; padding: 12px; margin-bottom: 8px;">💾 Salvar Configurações</button>
+        <button class="btn-action btn-pdf" id="btn-limpar-caixa" style="width: 100%; padding: 12px; margin-bottom: 8px;">🔄 Zerar Caixa do Dia (Geral)</button>
+        <a href="index.html" class="btn-action btn-clear" style="text-align: center; text-decoration: none; display: block; box-sizing: border-box; padding: 12px;">⬅️ Voltar ao Início</a>
+    </div>
+
+    <!-- 🌐 SCRIPT TOTALMENTE MODULARIZADO (ES MODULES) -->
+    <script type="module">
+        import { db, auth } from './js/firebase.js';
+        import { SorteioService } from './js/services/sorteio.service.js';
+
+        // Estrutura padrão inicial do sistema[cite: 1]
+        let configLocal = {
+            taxa: 15,
+            mensalidade: 50,
+            diaLimite: 10,
+            jogadoresPorTime: 11,
+            emailsPermitidos: [],
+            times: [
+                { nome: "Verde", cor: "#27ae60" },
+                { nome: "Amarelo", cor: "#f1c40f" },
+                { nome: "Vermelho", cor: "#e74c3c" },
+                { nome: "Roxo", cor: "#9b59b6" },
+                { nome: "Laranja", cor: "#e67e22" }
+            ]
+        };
+
+        function renderizarInputsTimes() {
+            const wrapper = document.getElementById('container-times');
+            wrapper.innerHTML = "";
+            for (let i = 0; i < 5; i++) {
+                const t = (configLocal.times && configLocal.times[i]) ? configLocal.times[i] : { nome: "", cor: "#cccccc" };
+                wrapper.innerHTML += `
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+                    <input type="color" id="t-cor-${i}" value="${t.cor}" style="border: none; width: 45px; height: 40px; border-radius: 8px; cursor: pointer; padding: 0; background: none;">
+                    <input type="text" id="t-nome-${i}" class="auth-input" value="${t.nome}" placeholder="Nome do Time ${i + 1} (Opcional)">
+                </div>
+            `;
+            }
+        }
+
+        async function carregarConfiguracoes() {
+            try {
+                const doc = await db.collection("configuracoes").doc("geral").get();
+                if (doc.exists) {
+                    configLocal = doc.data();
+                }
+
+                document.getElementById('cfg-taxa').value = configLocal.taxa !== undefined ? configLocal.taxa : 15;
+                document.getElementById('cfg-mensalidade').value = configLocal.mensalidade !== undefined ? configLocal.mensalidade : 50;
+                document.getElementById('cfg-dia-limite').value = configLocal.diaLimite !== undefined ? configLocal.diaLimite : 10;
+                document.getElementById('c-jogadores').value = configLocal.jogadoresPorTime !== undefined ? configLocal.jogadoresPorTime : 11;
+                document.getElementById('c-emails').value = configLocal.emailsPermitidos ? configLocal.emailsPermitidos.join(', ') : "";
+
+                renderizarInputsTimes();
+            } catch (error) {
+                console.error("Erro ao carregar configurações:", error);
+                renderizarInputsTimes();
+            }
+        }
+
+        async function salvarConfiguracoes() {
+            const taxaValue = parseFloat(document.getElementById('cfg-taxa').value) || 0;
+            const mensalidadeValue = parseFloat(document.getElementById('cfg-mensalidade').value) || 0;
+            const diaLimiteValue = parseInt(document.getElementById('cfg-dia-limite').value) || 10;
+            const jogsValue = parseInt(document.getElementById('c-jogadores').value) || 11;
+            const emailsRaw = document.getElementById('c-emails').value;
+
+            const emailsArray = emailsRaw.split(',')
+                .map(e => e.trim())
+                .filter(e => e.length > 0);
+
+            const novosTimes = [];
+            for (let i = 0; i < 5; i++) {
+                const nomeT = document.getElementById(`t-nome-${i}`).value.trim();
+                const corT = document.getElementById(`t-cor-${i}`).value;
+                novosTimes.push({ nome: nomeT, cor: corT });
+            }
+
+            configLocal = {
+                taxa: taxaValue,
+                mensalidade: mensalidadeValue,
+                diaLimite: diaLimiteValue,
+                jogadoresPorTime: jogsValue,
+                emailsPermitidos: emailsArray,
+                times: novosTimes
+            };
+
+            try {
+                await db.collection("configuracoes").doc("geral").set(configLocal);
+                renderizarInputsTimes();
+                alert("✅ Configurações salvas com sucesso!");
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("❌ Falha ao salvar configurações.");
+            }
+        }
+
+        async function limparCaixaGeral() {
+            if (!confirm("⚠️ ATENÇÃO: Deseja zerar a lista de presença, pagamentos diários e limpar os times ativos para uma nova rodada? (Mensalistas quitados continuarão confirmados)")) return;
+            try {
+                // 🤞 Chamada nativa e limpa para o seu SorteioService modular
+                await SorteioService.encerrarSorteio();
+
+                // Limpa o caixa diário dos jogadores no Firestore[cite: 1]
+                const snap = await db.collection("jogadores").get();
+                const batch = db.batch();
+                
+                snap.docs.forEach(doc => {
+                    const dados = doc.data();
+                    
+                    if (dados.modalidade === "diaria") {
+                        // Diarista[cite: 1]
+                        batch.update(db.collection("jogadores").doc(doc.id), {
+                            valorPago: 0, forma: "",
+                            valorPago2: 0, forma2: "",
+                            goleiro: false
+                        });
+                    } else {
+                        // Mensalista[cite: 1]
+                        batch.update(db.collection("jogadores").doc(doc.id), {
+                            goleiro: false,
+                            presencaRodada: false
+                        });
+                    }
+                });
+                
+                await batch.commit();
+                alert("🔄 Presenças, caixas diários e times ativos limpos com sucesso através do SorteioService!");
+            } catch (error) {
+                console.error("Erro ao zerar rodada:", error);
+                alert("❌ Erro ao limpar informações.");
+            }
+        }
+
+        // Vincula as funções modulares aos eventos de clique dos botões do HTML
+        document.getElementById('btn-salvar-config').addEventListener('click', salvarConfiguracoes);
+        document.getElementById('btn-limpar-caixa').addEventListener('click', limparCaixaGeral);
+
+        // Monitora o estado da autenticação
+        auth.onAuthStateChanged(u => {
+            if (!u) {
+                alert("Faça login na tela inicial primeiro!");
+                window.location.href = "index.html";
+            } else {
+                carregarConfiguracoes();
+            }
+        });
+    </script>
+</body>
+
+</html>

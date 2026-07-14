@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestão Peladeiros - 2026</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <link rel="icon" type="image/jpeg" href="https://i.imgur.com/zSl9YOk.jpeg">
+
+    <!-- 🎨 Folha de Estilos Externa -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log("Service Worker Registrado!"))
+                .catch(err => console.log("Erro no SW:", err));
+        }
+    </script>
+
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+   
+    <script>
+        const firebaseConfig = { ... };
+        if (!firebase.apps.length) { ... }
+        var db = firebase.firestore();
+    </script>
+    
+    <!-- PDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+
+    <!-- AUTENTICAÇÃO -->
+    <div id="auth-container" style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1a1a1a; gap:20px;">
+        <img src="https://i.imgur.com/zSl9YOk.jpeg" alt="Logo Peladeiros" style="max-width: 150px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+        <button id="btn-login-google" style="padding:15px 30px; border-radius:8px; font-weight:bold; cursor:pointer; background: white; border: none; font-size: 1rem;">
+            Entrar com Google
+        </button>
+    </div>
+
+    <!-- SISTEMA PRINCIPAL -->
+    <div id="app-main" class="container" style="display:none;">
+        <header>
+            <img src="https://i.imgur.com/zSl9YOk.jpeg" class="logo">
+            <h1 style="font-size: 1.2rem; margin: 5px 0 0 0;">⚽ Gestão Peladeiros ⚽</h1>
+            <p id="data-topo" style="font-size: 0.85rem; color: #7f8c8d; font-weight: bold; margin-top: 5px; text-transform: capitalize;"></p>
+            <button id="btn-logout" style="position:absolute; right:0; top:0; background:none; border:none; color:red; cursor:pointer; font-size:0.7rem;">Sair</button>
+        </header>
+
+        <!-- NAVEGAÇÃO -->
+        <nav class="navbar-app">
+            <button class="nav-btn active" data-target="sorteio">🤞 Sorteio</button>
+            <button class="nav-btn" data-target="historico">📅 Histórico</button>
+            <button class="nav-btn" data-target="dashboard">📊 Estatísticas</button>
+            <button class="nav-btn" data-target="financeiro">💰 Financeiro</button> <!-- 🚀 NOVO BOTÃO -->
+        </nav>
+
+        <!-- ABA 1: SORTEIO E LISTAS -->
+        <div id="view-sorteio-container">
+            <div class="search-box">
+                <input type="text" id="inNome" placeholder="Nome do novo jogador...">
+                <button class="btn-add" onclick="cadastrarNovo()">+</button>
+            </div>
+
+            <h3 id="tituloEspera">Lista de Espera / Cadastro (0)</h3>
+            <ul id="listaEspera" style="list-style:none; padding:0;"></ul>
+
+            <h3 id="tituloConfirmados">Confirmados (0)</h3>
+            <ul id="listaConfirmados" style="list-style:none; padding:0;"></ul>
+
+            <div class="actions">
+                <!-- 🤞 Chame a função exposta pelo módulo do Sorteio -->
+                <button class="btn-action btn-draw" onclick="executarSorteioModular()">🤞 Sortear Times</button>
+                <button class="btn-action btn-pdf" onclick="gerarPDF()">📄 Relatório PDF</button>
+                <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">📨 Enviar Times WhatsApp</button>
+                <button class="btn-action btn-clear" onclick="window.location.href='config.html'">⚙️ Configurações do Sistema</button>
+            </div>
+            <div id="times"></div>
+        </div>
+
+        <!-- ABA 2: DASHBOARD -->
+        <div id="view-dashboard-container" style="display: none; padding-top: 10px;"></div>
+
+        <!-- ABA 3: HISTÓRICO -->
+        <div id="view-historico-container" style="display: none; padding-top: 10px;"></div>
+
+        <!-- 🚀 ABA 4: DASHBOARD FINANCEIRA -->
+        <div id="view-financeiro-container" style="display: none; padding-top: 10px;"></div>
+
+    </div>
+
+    <!-- MODAL DE CADASTRO, PAGAMENTOS E EDIÇÃO -->
+    <div class="modal" id="modalPagamento">
+        <div class="modal-content">
+            <h3 style="margin:0">Dados do Jogador</h3>
+            <input type="hidden" id="editId">
+            <input type="text" id="m-nome" class="auth-input" placeholder="Nome">
+            <input type="date" id="m-nasc" class="auth-input">
+
+            <label style="font-size:0.75rem; font-weight:bold; margin-top:5px;">Modalidade de Contribuição:</label>
+            <select id="m-modalidade" class="auth-input" onchange="atualizarPlaceholderValor()">
+                <option value="diaria">📆 Diarista</option>
+                <option value="mensalista">💳 Mensalista</option>
+            </select>
+
+            <div style="background:#f9f9f9; padding:10px; border-radius:10px; border:1px solid #eee;">
+
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <label style="font-size:0.7rem; font-weight:bold; display:block; margin-bottom:5px;">QR CODE PARA PAGAMENTO</label>
+                    <img src="https://i.imgur.com/5Dz3zDQ.jpeg" alt="QR Code Pix" style="width: 120px; border-radius: 8px; border: 1px solid #ddd;">
+                </div>
+
+                <label style="font-size:0.7rem; font-weight:bold;">Pagamento Principal</label>
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <input type="number" id="m-valor" class="auth-input" placeholder="0.00">
+                    <select id="m-forma" class="auth-input">
+                        <option value="Pix">❖Pix</option>
+                        <option value="Dinheiro">💲Dinheiro</option>
+                        <option value="Crédito">💳Crédito</option>
+                    </select>
+                </div>
+
+                <label style="font-size:0.7rem; font-weight:bold;">Pagamento Complementar (Opcional)</label>
+                <div style="display:flex; gap:5px;">
+                    <input type="number" id="m-valor2" class="auth-input" placeholder="0.00">
+                    <select id="m-forma2" class="auth-input">
+                        <option value="">-</option>
+                        <option value="Pix">❖Pix</option>
+                        <option value="Dinheiro">💲Dinheiro</option>
+                        <option value="Crédito">💳Crédito</option>
+                    </select>
+                </div>
+
+                <div style="margin-top:15px;">
+                    <input type="hidden" id="m-goleiro-status">
+                    <button id="btn-goleiro-toggle" onclick="toggleGoleiro()" style="width:100%; padding:10px; border-radius:8px; border:2px solid #ddd; font-weight:bold; cursor:pointer; transition: 0.3s;">
+                        🧤 GOLEIRO FIXO: NÃO
+                    </button>
+                </div>
+            </div>
+            
+            <button id="btn-salvar-dinamico" onclick="salvarTudo()" style="background:var(--accent); color:white; border:none; padding:12px; border-radius:8px; font-weight:bold; cursor:pointer;">SALVAR ALTERAÇÕES</button>
+            <button id="btn-excluir-dinamico" onclick="acaoExcluirDinamica()" style="background:var(--danger); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">🗑️ EXCLUIR</button>
+            <button onclick="fecharModal()" style="background:#eee; border:none; color:#666; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; margin-top:5px;">CANCELAR</button>
+        </div>
+    </div>
+
+    <!-- SCRIPTS MODULARES CENTRALIZADOS -->
+ <script type="module" src="js/app.js"></script>
+
+<script type="module">
+    // Importa as instâncias oficiais e únicas do seu arquivo de configuração
+    import { db, auth } from './js/firebase.js';
+    import { GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+
+    // Expõe para o escopo global do index.html (mantendo compatibilidade com os botões)
+    window.db = db;
+    window.loginGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
+    window.logout = () => { signOut(auth).then(() => window.location.reload()); };
+    
+    document.getElementById('btn-login-google').addEventListener('click', window.loginGoogle);
+    document.getElementById('btn-logout').addEventListener('click', window.logout);
+</script>
+    
+    <!-- Lógica de Operações Globais da Modal (Fase final de migração) -->
+    <script>
+        // Funções de apoio herdadas para controle da modal
+        function getMesAnoAtual() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        function getDataFormatadaDoc() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        async function cadastrarNovo() {
+            const n = document.getElementById('inNome').value.trim();
+            if (!n) return;
+            
+            // Acessa a lista cacheada de dentro do SorteioView de forma segura
+            const { SorteioView } = await import('./js/views/sorteio.view.js');
+            if (SorteioView.listaJogadores.some(j => j.nome.toLowerCase() === n.toLowerCase())) {
+                alert("Erro: Jogador já cadastrado!"); 
+                return;
+            }
+            await db.collection("jogadores").add({
+                nome: n, valorPago: 0, forma: "", valorPago2: 0, forma2: "",
+                goleiro: false, nivel: 3, nascimento: "", modalidade: "diaria", mesPago: "", presencaRodada: false, dataPagamento: "", totalPresencas: 0
+            });
+            document.getElementById('inNome').value = "";
+        }
+
+        function atualizarPlaceholderValor() {
+            const { SorteioView } = import('./js/views/sorteio.view.js').then(mod => {
+                const modSelected = document.getElementById('m-modalidade').value;
+                const p1 = document.getElementById('m-valor');
+                const config = mod.SorteioView.configSistema;
+
+                if (modSelected === "mensalista") {
+                    p1.placeholder = `Min: R$ ${(parseFloat(config.mensalidade) || 50).toFixed(2)}`;
+                } else {
+                    p1.placeholder = `Min: R$ ${(parseFloat(config.taxa) || 15).toFixed(2)}`;
+                }
+            });
+        }
+
+        async function abrirEdicao(id) {
+            const { SorteioView } = await import('./js/views/sorteio.view.js');
+            const j = SorteioView.listaJogadores.find(x => x.id === id);
+
+            document.getElementById('editId').value = id;
+            document.getElementById('m-nome').value = j.nome;
+            document.getElementById('m-nasc').value = j.nascimento || "";
+            document.getElementById('m-modalidade').value = j.modalidade || "diaria";
+
+            document.getElementById('m-valor').value = j.valorPago || "";
+            document.getElementById('m-forma').value = j.forma || "Pix";
+            document.getElementById('m-valor2').value = j.valorPago2 || "";
+            document.getElementById('m-forma2').value = j.forma2 || "";
+
+            atualizarPlaceholderValor();
+
+            const inputGoleiro = document.getElementById('m-goleiro-status');
+            inputGoleiro.value = j.goleiro ? "true" : "false";
+            const btnGoleiro = document.getElementById('btn-goleiro-toggle');
+
+            if (j.goleiro) {
+                btnGoleiro.innerText = "🧤 GOLEIRO FIXO: SIM";
+                btnGoleiro.style.background = "#f1c40f"; btnGoleiro.style.color = "black"; btnGoleiro.style.borderColor = "#f1c40f";
+            } else {
+                btnGoleiro.innerText = "🧤 GOLEIRO FIXO: NÃO";
+                btnGoleiro.style.background = "white"; btnGoleiro.style.color = "#333"; btnGoleiro.style.borderColor = "#ddd";
+            }
+
+            const btnSalvar = document.getElementById('btn-salvar-dinamico');
+            const btnExcluir = document.getElementById('btn-excluir-dinamico');
+
+            const isConfirmado = SorteioView.checarConfirmacao(j);
+            const isMensalistaPago = j.modalidade === "mensalista" && j.mesPago === getMesAnoAtual();
+
+            btnSalvar.innerText = "SALVAR ALTERAÇÕES";
+            btnSalvar.style.background = "var(--accent)";
+
+            if (j.modalidade === "mensalista") {
+                if (isMensalistaPago) {
+                    if (isConfirmado) {
+                        btnExcluir.innerText = "🚫 REMOVER DA RODADA (RESETAR)";
+                        btnExcluir.style.background = "#f39c12";
+                    } else {
+                        btnSalvar.innerText = "✅ CONFIRMAR PRESENÇA";
+                        btnSalvar.style.background = "var(--waiting)";
+                        btnExcluir.innerText = "🔄 ZERAR CAIXA";
+                        btnExcluir.style.background = "#d35400";
+                    }
+                } else {
+                    btnExcluir.innerText = "🗑️ EXCLUIR DO BANCO";
+                    btnExcluir.style.background = "var(--danger)";
+                }
+            } else {
+                if (isConfirmado) {
+                    btnExcluir.innerText = "🚫 REMOVER DA RODADA (RESETAR)";
+                    btnExcluir.style.background = "#f39c12";
+                } else {
+                    btnExcluir.innerText = "🗑️ EXCLUIR DO BANCO";
+                    btnExcluir.style.background = "var(--danger)";
+                }
+            }
+
+            document.getElementById('modalPagamento').style.display = 'flex';
+        }
+
+        async function salvarTudo() {
+            const id = document.getElementById('editId').value;
+            const isGoleiro = document.getElementById('m-goleiro-status').value === "true";
+            const modSelected = document.getElementById('m-modalidade').value;
+
+            const v1 = parseFloat(document.getElementById('m-valor').value) || 0;
+            const v2 = parseFloat(document.getElementById('m-valor2').value) || 0;
+            const totalDigitado = v1 + v2;
+
+            const { SorteioView } = await import('./js/views/sorteio.view.js');
+            const config = SorteioView.configSistema;
+
+            const jogadorOriginal = SorteioView.listaJogadores.find(x => x.id === id);
+            const v1Antigo = parseFloat(jogadorOriginal.valorPago) || 0;
+            const v2Antigo = parseFloat(jogadorOriginal.valorPago2) || 0;
+
+            if (!isGoleiro && totalDigitado > 0) {
+                if (modSelected === "mensalista") {
+                    const minMensal = parseFloat(config.mensalidade) || 50;
+                    if (totalDigitado < minMensal) {
+                        alert(`Erro: Para Mensalistas, o valor mínimo exigido é R$ ${minMensal.toFixed(2)}`);
+                        return;
+                    }
+
+                    const hoje = new Date();
+                    const limite = parseInt(config.diaLimite) || 10;
+                    if (hoje.getDate() > limite) {
+                        const prosseguir = confirm(`Atenção: Passou do dia limite de recebimento (${limite}). Deseja aceitar a mensalidade mesmo assim?`);
+                        if (!prosseguir) return;
+                    }
+                } else {
+                    const minDiaria = parseFloat(config.taxa) || 15;
+                    if (totalDigitado < minDiaria) {
+                        alert(`Erro: Para Diaristas, o valor mínimo configurado é R$ ${minDiaria.toFixed(2)}`);
+                        return;
+                    }
+                }
+            }
+
+            try {
+                const nomeJogador = document.getElementById('m-nome').value;
+                const dadosParaSalvar = {
+                    nome: nomeJogador,
+                    nascimento: document.getElementById('m-nasc').value,
+                    nivel: 3, // Forçado para 3 por padrão (com a exclusão do nível técnico)
+                    modalidade: modSelected,
+                    valorPago: v1 || "",
+                    forma: document.getElementById('m-forma').value,
+                    valorPago2: v2 || "",
+                    forma2: document.getElementById('m-forma2').value,
+                    goleiro: isGoleiro
+                };
+
+                if (modSelected === "mensalista") {
+                    dadosParaSalvar.mesPago = getMesAnoAtual();
+                    dadosParaSalvar.presencaRodada = true;
+
+                    if (totalDigitado > 0) {
+                        dadosParaSalvar.dataPagamento = getDataFormatadaDoc();
+                    } else {
+                        dadosParaSalvar.dataPagamento = jogadorOriginal.dataPagamento || getDataFormatadaDoc();
+                    }
+                }
+
+                const { FinanceiroService } = await import('./js/services/financeiro.service.js');
+
+                if (v1 > v1Antigo) {
+                    await FinanceiroService.registrarPagamento(id, nomeJogador, modSelected, (v1 - v1Antigo), document.getElementById('m-forma').value);
+                }
+                if (v2 > v2Antigo) {
+                    await FinanceiroService.registrarPagamento(id, nomeJogador, modSelected, (v2 - v2Antigo), document.getElementById('m-forma2').value);
+                }
+
+                await db.collection("jogadores").doc(id).update(dadosParaSalvar);
+                fecharModal();
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao Salvar Alterações.");
+            }
+        }
+
+        async function acaoExcluirDinamica() {
+            const id = document.getElementById('editId').value;
+            const { SorteioView } = await import('./js/views/sorteio.view.js');
+            const j = SorteioView.listaJogadores.find(x => x.id === id);
+            
+            const isConfirmado = SorteioView.checarConfirmacao(j);
+            const isMensalistaPago = j.modalidade === "mensalista" && j.mesPago === getMesAnoAtual();
+
+            if (j.modalidade === "mensalista") {
+                if (isMensalistaPago) {
+                    if (isConfirmado) {
+                        if (confirm(`Remover confirmação de presença de ${j.nome}? Os valores do caixa serão mantidos.`)) {
+                            await db.collection("jogadores").doc(id).update({ presencaRodada: false });
+                            fecharModal();
+                        }
+                    } else {
+                        if (confirm(`Deseja ZERAR o caixa e apagar os valores pagos de ${j.nome}?\nO status voltará a ser Pendente.`)) {
+                            await db.collection("jogadores").doc(id).update({
+                                valorPago: 0, forma: "", valorPago2: 0, forma2: "", mesPago: "", presencaRodada: false, dataPagamento: ""
+                            });
+                            fecharModal();
+                        }
+                    }
+                } else {
+                    if (confirm(`Deseja EXCLUIR ${j.nome} do banco de dados permanentemente?`)) {
+                        await db.collection("jogadores").doc(id).delete();
+                        fecharModal();
+                    }
+                }
+            } else {
+                if (isConfirmado) {
+                    if (confirm(`Remover confirmação de ${j.nome}? Os valores ou presenças serão limpos.`)) {
+                        await db.collection("jogadores").doc(id).update({
+                            valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, mesPago: "", presencaRodada: false, dataPagamento: ""
+                        });
+                        fecharModal();
+                    }
+                } else {
+                    if (confirm(`Deseja EXCLUIR ${j.nome} do banco de dados permanentemente?`)) {
+                        await db.collection("jogadores").doc(id).delete();
+                        fecharModal();
+                    }
+                }
+            }
+        }
+
+        function fecharModal() { document.getElementById('modalPagamento').style.display = 'none'; }
+
+        function toggleGoleiro() {
+            const btn = document.getElementById('btn-goleiro-toggle');
+            const input = document.getElementById('m-goleiro-status');
+            const isGoleiro = input.value === "true";
+
+            if (isGoleiro) {
+                input.value = "false";
+                btn.innerText = "🧤 GOLEIRO FIXO: NÃO";
+                btn.style.background = "white"; btn.style.color = "#333"; btn.style.borderColor = "#ddd";
+            } else {
+                input.value = "true";
+                btn.innerText = "🧤 GOLEIRO FIXO: SIM";
+                btn.style.background = "#f1c40f"; btn.style.color = "#000"; btn.style.borderColor = "#f1c40f";
+                document.getElementById('m-valor').value = 0;
+                document.getElementById('m-valor2').value = 0;
+            }
+        }
+
+        function gerarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const dataF = new Date().toLocaleDateString('pt-BR');
+            const hojeF = getDataFormatadaDoc();
+
+            doc.setFontSize(16);
+            doc.text(`Relatório Financeiro da Partida - ${dataF}`, 14, 20);
+
+            let tPix = 0, tDin = 0, tCre = 0, tGer = 0;
+
+            // Importa de forma segura as informações reativas da view de sorteios
+            import('./js/views/sorteio.view.js').then(mod => {
+                const pagantesDoDia = mod.SorteioView.listaJogadores.filter(j => {
+                    const temValor = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0) > 0;
+                    return j.modalidade === "mensalista" ? (temValor && j.dataPagamento === hojeF) : temValor;
+                });
+
+                if (pagantesDoDia.length === 0) {
+                    alert("Não constam novos pagamentos realizados no dia de hoje.");
+                    return;
+                }
+
+                const body = pagantesDoDia.map(j => {
+                    const v1 = parseFloat(j.valorPago) || 0;
+                    const v2 = parseFloat(j.valorPago2) || 0;
+                    const f1 = j.forma || "Não inf.";
+                    const f2 = j.forma2 || "";
+                    const total = v1 + v2;
+
+                    [{ v: v1, f: f1 }, { v: v2, f: f2 }].forEach(p => {
+                        if (p.f === "Pix") tPix += p.v;
+                        else if (p.f === "Dinheiro") tDin += p.v;
+                        else if (p.f === "Crédito") tCre += p.v;
+                    });
+
+                    tGer += total;
+                    const modalidadeTxt = j.modalidade === "mensalista" ? " (Mensal)" : " (Diária)";
+                    let corLinha = "PRETO";
+                    const formas = [f1, f2].filter(Boolean);
+
+                    if (formas.length > 1) corLinha = "MISTO";
+                    else if (f1 === "Pix") corLinha = "PIX";
+                    else if (f1 === "Dinheiro") corLinha = "DINHEIRO";
+                    else if (f1 === "Crédito") corLinha = "CREDITO";
+
+                    return [j.nome + modalidadeTxt, f2 ? `${f1}: R$${v1.toFixed(2)} | ${f2}: R$${v2.toFixed(2)}` : `${f1}: R$${v1.toFixed(2)}`, `R$ ${total.toFixed(2)}`, corLinha];
+                });
+
+                doc.autoTable({
+                    startY: 25,
+                    head: [['Jogador', 'Detalhamento', 'Total']],
+                    body: body.map(l => [l[0], l[1], l[2]]),
+                    headStyles: { fillColor: [44, 62, 80] },
+                    didParseCell: function (data) {
+                        if (data.section !== 'body') return;
+                        const tipo = body[data.row.index][3];
+                        if (tipo === "PIX") { data.cell.styles.textColor = [0, 102, 204]; data.cell.styles.fontStyle = 'bold'; }
+                        else if (tipo === "DINHEIRO") { data.cell.styles.textColor = [0, 128, 0]; data.cell.styles.fontStyle = 'bold'; }
+                        else if (tipo === "CREDITO") { data.cell.styles.textColor = [220, 53, 69]; data.cell.styles.fontStyle = 'bold'; }
+                        else if (tipo === "MISTO") { data.cell.styles.textColor = [128, 0, 128]; data.cell.styles.fontStyle = 'bold'; }
+                    }
+                });
+
+                doc.autoTable({
+                    startY: doc.lastAutoTable.finalY + 12,
+                    head: [['Modalidade', 'Total']],
+                    body: [
+                        ['PIX', `R$ ${tPix.toFixed(2)}`],
+                        ['DINHEIRO', `R$ ${tDin.toFixed(2)}`],
+                        ['CRÉDITO', `R$ ${tCre.toFixed(2)}`],
+                        ['TOTAL GERAL', `R$ ${tGer.toFixed(2)}`]
+                    ],
+                    theme: 'striped',
+                    headStyles: { fillColor: [39, 174, 96] },
+                    didParseCell: function (data) {
+                        if (data.section !== 'body') return;
+                        const modalidade = data.row.raw[0];
+                        if (modalidade === 'PIX') { data.cell.styles.textColor = [0, 102, 204]; data.cell.styles.fontStyle = 'bold'; }
+                        else if (modalidade === 'DINHEIRO') { data.cell.styles.textColor = [0, 128, 0]; data.cell.styles.fontStyle = 'bold'; }
+                        else if (modalidade === 'CRÉDITO') { data.cell.styles.textColor = [220, 53, 69]; data.cell.styles.fontStyle = 'bold'; }
+                        else if (modalidade === 'TOTAL GERAL') { data.cell.styles.textColor = [0, 0, 0]; data.cell.styles.fontStyle = 'bold'; data.cell.styles.fontSize = 12; }
+                    }
+                });
+
+                doc.save(`Financeiro_Pelada_${dataF.replace(/\//g, '-')}.pdf`);
+            });
+        }
+
+        async function enviarWhatsApp() {
+            const { SorteioView } = await import('./js/views/sorteio.view.js');
+            if (!SorteioView.timesAtuais.length) return alert("Sorteie primeiro!");
+            const agora = new Date();
+            let msg = `*⚽ TIMES SORTEADOS - ${agora.toLocaleDateString()}*\n\n`;
+            SorteioView.timesAtuais.forEach(t => {
+                const medI = t.idades.length ? (t.somaIdade / t.idades.length).toFixed(1) : 'N/A';
+                msg += `*${t.nome.toUpperCase()}* (🎂Média: ${medI}a)\n${t.membros.join('\n')}\n\n`;
+            });
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+        }
+
+        function atualizarData() {
+            const elementoData = document.getElementById('data-topo');
+            const agora = new Date();
+            const opcoes = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            let dataFormatada = agora.toLocaleDateString('pt-BR', opcoes);
+            elementoData.textContent = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
+        }
+
+        window.onload = atualizarData;
+
+    </script>
+</body>
+
+</html>
