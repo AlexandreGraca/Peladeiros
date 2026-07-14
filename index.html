@@ -154,45 +154,31 @@
         </div>
     </div>
 
- <!-- SCRIPTS MODULARES CENTRALIZADOS -->
-    <script type="module" src="js/app.js"></script>
+ <script type="module" src="js/app.js"></script>
 
     <script type="module">
         import { db, auth } from './js/firebase.js';
-        import { collection, doc, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
         import { GoogleAuthProvider, signInWithRedirect, signOut, getRedirectResult } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-        // Adaptador de compatibilidade para fazer o db.collection() funcionar com o Firebase Modular!
-        window.db = {
-            collection: (path) => {
-                return {
-                    add: (data) => addDoc(collection(db, path), data),
-                    doc: (id) => {
-                        return {
-                            update: (data) => updateDoc(doc(db, path, id), data),
-                            delete: () => deleteDoc(doc(db, path, id))
-                        }
-                    }
-                }
-            }
-        };
+        // Compartilha a instância adaptada de forma global para as funções da modal
+        window.db = db;
 
-        // Substituição do signInWithPopup por signInWithRedirect (Evita o bloqueio de pop-up no celular e no Chrome!)
         window.loginGoogle = () => signInWithRedirect(auth, new GoogleAuthProvider());
         window.logout = () => { signOut(auth).then(() => window.location.reload()); };
         
         document.getElementById('btn-login-google').addEventListener('click', window.loginGoogle);
         document.getElementById('btn-logout').addEventListener('click', window.logout);
 
-        // Captura o resultado do login após o redirecionamento
+        // Captura o login de forma segura após o redirecionamento
         getRedirectResult(auth).then((result) => {
             if (result && result.user) {
-                console.log("Usuário logado via redirecionamento:", result.user);
+                console.log("Logado com sucesso:", result.user.displayName);
             }
         }).catch((error) => {
             console.error("Erro no redirecionamento do Auth:", error);
         });
-    </script>   
+    </script>
+    
     <!-- Lógica de Operações Globais da Modal (Fase final de migração) -->
     <script>
         // Funções de apoio herdadas para controle da modal
