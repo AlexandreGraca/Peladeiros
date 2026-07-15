@@ -21,21 +21,7 @@
         }
     </script>
 
-    <!-- Firebase Compat SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-   
-    <script>
-        const firebaseConfig = { ... };
-        if (!firebase.apps.length) { ... }
-        var db = firebase.firestore();
-    </script>
     
-    <!-- PDF Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-</head>
 
 <body>
 
@@ -61,7 +47,7 @@
             <button class="nav-btn active" data-target="sorteio">🤞 Sorteio</button>
             <button class="nav-btn" data-target="historico">📅 Histórico</button>
             <button class="nav-btn" data-target="dashboard">📊 Estatísticas</button>
-            <button class="nav-btn" data-target="financeiro">💰 Financeiro</button> <!-- 🚀 NOVO BOTÃO -->
+            <button class="nav-btn" data-target="financeiro">💰 Financeiro</button>
         </nav>
 
         <!-- ABA 1: SORTEIO E LISTAS -->
@@ -78,7 +64,6 @@
             <ul id="listaConfirmados" style="list-style:none; padding:0;"></ul>
 
             <div class="actions">
-                <!-- 🤞 Chame a função exposta pelo módulo do Sorteio -->
                 <button class="btn-action btn-draw" onclick="executarSorteioModular()">🤞 Sortear Times</button>
                 <button class="btn-action btn-pdf" onclick="gerarPDF()">📄 Relatório PDF</button>
                 <button class="btn-action btn-whatsapp-send" onclick="enviarWhatsApp()">📨 Enviar Times WhatsApp</button>
@@ -93,7 +78,7 @@
         <!-- ABA 3: HISTÓRICO -->
         <div id="view-historico-container" style="display: none; padding-top: 10px;"></div>
 
-        <!-- 🚀 ABA 4: DASHBOARD FINANCEIRA -->
+        <!-- ABA 4: DASHBOARD FINANCEIRA -->
         <div id="view-financeiro-container" style="display: none; padding-top: 10px;"></div>
 
     </div>
@@ -154,29 +139,21 @@
         </div>
     </div>
 
- <script type="module" src="js/app.js"></script>
+    <!-- SCRIPTS MODULARES CENTRALIZADOS -->
+    <script type="module" src="js/app.js"></script>
 
     <script type="module">
+        // Importa as instâncias oficiais e únicas do seu arquivo de configuração
         import { db, auth } from './js/firebase.js';
-        import { GoogleAuthProvider, signInWithRedirect, signOut, getRedirectResult } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+        import { GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-        // Compartilha a instância adaptada de forma global para as funções da modal
+        // Expõe o db e auth para o escopo global do index.html de forma limpa e única
         window.db = db;
-
-        window.loginGoogle = () => signInWithRedirect(auth, new GoogleAuthProvider());
+        window.loginGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
         window.logout = () => { signOut(auth).then(() => window.location.reload()); };
         
         document.getElementById('btn-login-google').addEventListener('click', window.loginGoogle);
         document.getElementById('btn-logout').addEventListener('click', window.logout);
-
-        // Captura o login de forma segura após o redirecionamento
-        getRedirectResult(auth).then((result) => {
-            if (result && result.user) {
-                console.log("Logado com sucesso:", result.user.displayName);
-            }
-        }).catch((error) => {
-            console.error("Erro no redirecionamento do Auth:", error);
-        });
     </script>
     
     <!-- Lógica de Operações Globais da Modal (Fase final de migração) -->
@@ -202,15 +179,16 @@
                 alert("Erro: Jogador já cadastrado!"); 
                 return;
             }
-            await db.collection("jogadores").add({
+            // Alterado para ler do 'window.db' exposto globalmente de forma segura
+            await window.db.collection("jogadores").add({
                 nome: n, valorPago: 0, forma: "", valorPago2: 0, forma2: "",
-                goleiro: false, nivel: 3, nascimento: "", modalidade: "diaria", mesPago: "", presencaRodada: false, dataPagamento: "", totalPresencas: 0
+                goleiro: false, nivel: 3, nascimento: "", modalidade: "diaria", mesPago: "", presencaRodada: false, dataPagamento: "", presencas: 0
             });
             document.getElementById('inNome').value = "";
         }
 
         function atualizarPlaceholderValor() {
-            const { SorteioView } = import('./js/views/sorteio.view.js').then(mod => {
+            import('./js/views/sorteio.view.js').then(mod => {
                 const modSelected = document.getElementById('m-modalidade').value;
                 const p1 = document.getElementById('m-valor');
                 const config = mod.SorteioView.configSistema;
@@ -332,7 +310,7 @@
                 const dadosParaSalvar = {
                     nome: nomeJogador,
                     nascimento: document.getElementById('m-nasc').value,
-                    nivel: 3, // Forçado para 3 por padrão (com a exclusão do nível técnico)
+                    nivel: 3, 
                     modalidade: modSelected,
                     valorPago: v1 || "",
                     forma: document.getElementById('m-forma').value,
@@ -361,13 +339,25 @@
                     await FinanceiroService.registrarPagamento(id, nomeJogador, modSelected, (v2 - v2Antigo), document.getElementById('m-forma2').value);
                 }
 
-                await db.collection("jogadores").doc(id).update(dadosParaSalvar);
+                await window.db.collection("jogadores").doc(id).update(dadosParaSalvar);
                 fecharModal();
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao Salvar Alterações.");
             }
         }
+
+        async function executarSorteioModular() {
+            try {
+                const { SorteioView } = await import('./js/views/sorteio.view.js');
+                await SorteioView.dispararSorteio();
+            } catch (error) {
+                console.error("Erro ao executar sorteio modular:", error);
+                alert("Erro ao realizar o sorteio.");
+            }
+        }
+
+        window.executarSorteioModular = executarSorteioModular;
 
         async function acaoExcluirDinamica() {
             const id = document.getElementById('editId').value;
@@ -381,12 +371,12 @@
                 if (isMensalistaPago) {
                     if (isConfirmado) {
                         if (confirm(`Remover confirmação de presença de ${j.nome}? Os valores do caixa serão mantidos.`)) {
-                            await db.collection("jogadores").doc(id).update({ presencaRodada: false });
+                            await window.db.collection("jogadores").doc(id).update({ presencaRodada: false });
                             fecharModal();
                         }
                     } else {
                         if (confirm(`Deseja ZERAR o caixa e apagar os valores pagos de ${j.nome}?\nO status voltará a ser Pendente.`)) {
-                            await db.collection("jogadores").doc(id).update({
+                            await window.db.collection("jogadores").doc(id).update({
                                 valorPago: 0, forma: "", valorPago2: 0, forma2: "", mesPago: "", presencaRodada: false, dataPagamento: ""
                             });
                             fecharModal();
@@ -394,21 +384,21 @@
                     }
                 } else {
                     if (confirm(`Deseja EXCLUIR ${j.nome} do banco de dados permanentemente?`)) {
-                        await db.collection("jogadores").doc(id).delete();
+                        await window.db.collection("jogadores").doc(id).delete();
                         fecharModal();
                     }
                 }
             } else {
                 if (isConfirmado) {
                     if (confirm(`Remover confirmação de ${j.nome}? Os valores ou presenças serão limpos.`)) {
-                        await db.collection("jogadores").doc(id).update({
+                        await window.db.collection("jogadores").doc(id).update({
                             valorPago: 0, forma: "", valorPago2: 0, forma2: "", goleiro: false, mesPago: "", presencaRodada: false, dataPagamento: ""
                         });
                         fecharModal();
                     }
                 } else {
                     if (confirm(`Deseja EXCLUIR ${j.nome} do banco de dados permanentemente?`)) {
-                        await db.collection("jogadores").doc(id).delete();
+                        await window.db.collection("jogadores").doc(id).delete();
                         fecharModal();
                     }
                 }
@@ -435,7 +425,28 @@
             }
         }
 
-        function gerarPDF() {
+       async function gerarPDF() {
+            // 1. Carrega dinamicamente a biblioteca jsPDF e seu plugin AutoTable sob demanda
+            if (!window.jspdf) {
+                console.log("Carregando bibliotecas de PDF de forma modular...");
+                
+                // Cria e adiciona a biblioteca principal do jsPDF
+                await new Promise((resolve) => {
+                    const script = document.createElement('script');
+                    script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+                    script.onload = resolve;
+                    document.head.appendChild(script);
+                });
+
+                // Cria e adiciona o plugin AutoTable para formatar as tabelas do financeiro
+                await new Promise((resolve) => {
+                    const script = document.createElement('script');
+                    script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js";
+                    script.onload = resolve;
+                    document.head.appendChild(script);
+                });
+            }
+
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             const dataF = new Date().toLocaleDateString('pt-BR');
@@ -446,7 +457,6 @@
 
             let tPix = 0, tDin = 0, tCre = 0, tGer = 0;
 
-            // Importa de forma segura as informações reativas da view de sorteios
             import('./js/views/sorteio.view.js').then(mod => {
                 const pagantesDoDia = mod.SorteioView.listaJogadores.filter(j => {
                     const temValor = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0) > 0;

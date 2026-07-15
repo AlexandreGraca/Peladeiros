@@ -8,27 +8,6 @@
     
     <!-- 🎨 Folha de Estilos Unificada -->
     <link rel="stylesheet" href="css/style.css">
-
-    <!-- Firebase Compat SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
-
-    <!-- 🚀 Inicialização Segura do Firebase -->
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyC9VtX2SWiCtAPtLx6WGmVwUMA-EX_zuAY",
-            authDomain: "dbpeladeiros.firebaseapp.com",
-            projectId: "dbpeladeiros",
-            storageBucket: "dbpeladeiros.firebasestorage.app",
-            messagingSenderId: "460398325975",
-            appId: "1:460398325975:web:b382791c2d132d1a3d0092"
-        };
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        var db = firebase.firestore();
-    </script>
 </head>
 
 <body>
@@ -97,7 +76,7 @@
         import { db, auth } from './js/firebase.js';
         import { SorteioService } from './js/services/sorteio.service.js';
 
-        // Estrutura padrão inicial do sistema[cite: 1]
+        // Estrutura padrão inicial do sistema[cite: 9]
         let configLocal = {
             taxa: 15,
             mensalidade: 50,
@@ -161,8 +140,8 @@
             const novosTimes = [];
             for (let i = 0; i < 5; i++) {
                 const nomeT = document.getElementById(`t-nome-${i}`).value.trim();
-                const corT = document.getElementById(`t-cor-${i}`).value;
-                novosTimes.push({ nome: nomeT, cor: corT });
+                const colT = document.getElementById(`t-cor-${i}`).value;
+                novosTimes.push({ nome: nomeT, cor: colT });
             }
 
             configLocal = {
@@ -185,47 +164,93 @@
         }
 
         async function limparCaixaGeral() {
-            if (!confirm("⚠️ ATENÇÃO: Deseja zerar a lista de presença, pagamentos diários e limpar os times ativos para uma nova rodada? (Mensalistas quitados continuarão confirmados)")) return;
-            try {
-                // 🤞 Chamada nativa e limpa para o seu SorteioService modular
-                await SorteioService.encerrarSorteio();
+            const prosseguir = confirm("⚠️ ATENÇÃO: Deseja salvar a partida atual no Histórico, somar +1 presença aos confirmados e ZERAR o caixa para a próxima rodada?");
+            if (!prosseguir) return;
 
-                // Limpa o caixa diário dos jogadores no Firestore[cite: 1]
+            try {
+                // 1. Busca os times que estão ativos no momento do sorteio[cite: 9]
+                const timesDoc = await db.collection("configuracoes").doc("timesSorteados").get();
+                let timesAtivos = [];
+                if (timesDoc.exists && timesDoc.data().ativo) {
+                    timesAtivos = timesDoc.data().times || [];
+                }
+
+                // 2. Busca todos os jogadores do banco[cite: 9]
                 const snap = await db.collection("jogadores").get();
-                const batch = db.batch();
                 
-                snap.docs.forEach(doc => {
-                    const dados = doc.data();
+                // 3. Filtra os jogadores que participaram desta rodada (estavam confirmados)[cite: 9]
+                const jogadoresConfirmados = [];
+                snap.forEach(doc => {
+                    const j = { id: doc.id, ...doc.data() };
+                    
+                    const d = new Date();
+                    const mesAnoAtual = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    let isC = false;
+
+                    if (j.goleiro) {
+                        isC = true;
+                    } else if (j.modalidade === "mensalista") {
+                        isC = j.mesPago === mesAnoAtual && j.presencaRodada === true;
+                    } else {
+                        const total = (parseFloat(j.valorPago) || 0) + (parseFloat(j.valorPago2) || 0);
+                        isC = total >= (parseFloat(configLocal.taxa) || 15);
+                    }
+
+                    if (isC) {
+                        jogadoresConfirmados.push(j);
+                    }
+                });
+
+                // 4. Salva no histórico e adiciona as presenças dos confirmados (se houver jogadores)[cite: 9]
+                if (jogadoresConfirmados.length > 0) {
+                    console.log("Salvando histórico para os confirmados:", jogadoresConfirmados);
+                    await SorteioService.salvarHistoricoPartida(jogadoresConfirmados, timesAtivos);
+                } else {
+                    alert("Aviso: Nenhum jogador estava confirmado. O histórico de partida não será gerado.");
+                }
+
+                // 5. Limpa as presenças e caixas dos jogadores para o próximo domingo[cite: 9]
+                const promessas = [];
+                snap.forEach(jogadorDoc => {
+                    const dados = jogadorDoc.data();
+                    const jogadorRef = db.collection("jogadores").doc(jogadorDoc.id);
                     
                     if (dados.modalidade === "diaria") {
-                        // Diarista[cite: 1]
-                        batch.update(db.collection("jogadores").doc(doc.id), {
+                        // Diarista: Reseta completamente caixa e presença[cite: 9]
+                        promessas.push(jogadorRef.update({
                             valorPago: 0, forma: "",
                             valorPago2: 0, forma2: "",
-                            goleiro: false
-                        });
-                    } else {
-                        // Mensalista[cite: 1]
-                        batch.update(db.collection("jogadores").doc(doc.id), {
                             goleiro: false,
                             presencaRodada: false
-                        });
+                        }));
+                    } else {
+                        // Mensalista: Apenas remove de campo para o próximo domingo, mantém financeiro quitado[cite: 9]
+                        promessas.push(jogadorRef.update({
+                            goleiro: false,
+                            presencaRodada: false
+                        }));
                     }
                 });
                 
-                await batch.commit();
-                alert("🔄 Presenças, caixas diários e times ativos limpos com sucesso através do SorteioService!");
+                await Promise.all(promessas);
+
+                // 6. Limpa o sorteio ativo da tela[cite: 9]
+                await SorteioService.encerrarSorteio();
+
+                alert("🔄 Rodada Fechada com Sucesso!\n\n- Histórico salvo!\n- Presenças computadas (+1)!\n- Caixa zerado para a próxima partida!");
+                window.location.href = "index.html"; // Redireciona para a tela inicial atualizada[cite: 9]
+                
             } catch (error) {
-                console.error("Erro ao zerar rodada:", error);
-                alert("❌ Erro ao limpar informações.");
+                console.error("Erro ao fechar rodada:", error);
+                alert("❌ Erro ao fechar a rodada e salvar histórico.");
             }
         }
 
-        // Vincula as funções modulares aos eventos de clique dos botões do HTML
+        // Vincula as funções modulares aos eventos de clique dos botões do HTML[cite: 9]
         document.getElementById('btn-salvar-config').addEventListener('click', salvarConfiguracoes);
         document.getElementById('btn-limpar-caixa').addEventListener('click', limparCaixaGeral);
 
-        // Monitora o estado da autenticação
+        // Monitora o estado da autenticação[cite: 9]
         auth.onAuthStateChanged(u => {
             if (!u) {
                 alert("Faça login na tela inicial primeiro!");

@@ -2,10 +2,29 @@
 import { HistoricoService } from '../services/historico.service.js';
 
 export const HistoricoView = {
-    formatarData(dataString) {
-        if (!dataString) return "";
-        const partes = dataString.split('-');
-        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    /**
+     * 🚀 CORRIGIDO: Função inteligente que formata tanto String antiga quanto Timestamp novo do Firebase
+     */
+    formatarData(dataOriginal) {
+        if (!dataOriginal) return "N/A";
+
+        // Caso 1: Se já for um Timestamp do Firebase modular (formato novo)
+        if (typeof dataOriginal === 'object' && dataOriginal.seconds) {
+            // Converte Timestamp para objeto Date nativo do JS
+            const d = dataOriginal.toDate();
+            const dia = String(d.getDate()).padStart(2, '0');
+            const mes = String(d.getMonth() + 1).padStart(2, '0');
+            const ano = d.getFullYear();
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        // Caso 2: Se for a String legada 'AAAA-MM-DD' (suporte ao histórico antigo)
+        if (typeof dataOriginal === 'string' && dataOriginal.includes('-')) {
+            const partes = dataOriginal.split('-');
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        return "Data Inv.";
     },
 
     async render(containerId) {
@@ -28,7 +47,9 @@ export const HistoricoView = {
             `;
 
             partidas.forEach(partida => {
+                // ALTERADO: Chutando para a nossa função de formatação inteligente[cite: 10]
                 const dataFormatada = this.formatarData(partida.data);
+                
                 const totalJogadores = partida.jogadoresPresentes ? partida.jogadoresPresentes.length : 0;
 
                 let htmlTimes = "";

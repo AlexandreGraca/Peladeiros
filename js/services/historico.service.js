@@ -3,10 +3,11 @@ import { db } from '../firebase.js';
 
 export const HistoricoService = {
     /**
-     * Recupera todas as partidas salvas no Firestore ordenadas da mais recente para a mais antiga
+     * 🚀 CORRIGIDO: Recupera as partidas da coleção "historico" onde estamos salvando no sorteio.service.js
      */
     async obterPartidas() {
-        const snap = await db.collection("partidas")
+        // Apontando para o caminho correto de gravação ("historico")[cite: 5]
+        const snap = await db.collection("historico")
                             .orderBy("data", "desc")
                             .get();
         
