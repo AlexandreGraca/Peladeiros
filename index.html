@@ -145,15 +145,51 @@
     <script type="module">
         // Importa as instâncias oficiais e únicas do seu arquivo de configuração
         import { db, auth } from './js/firebase.js';
-        import { GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+        import { 
+            GoogleAuthProvider, 
+            signInWithPopup, 
+            signInWithRedirect, 
+            getRedirectResult, 
+            signOut 
+        } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
-        // Expõe o db e auth para o escopo global do index.html de forma limpa e única
+        // Expõe o db para o escopo global do index.html
         window.db = db;
-        window.loginGoogle = () => signInWithPopup(auth, new GoogleAuthProvider());
-        window.logout = () => { signOut(auth).then(() => window.location.reload()); };
+
+        // 🚀 FUNÇÃO DE LOGIN INTELIGENTE (Pop-up no PC, Redirect no Celular)
+        window.loginGoogle = () => {
+            const provider = new GoogleAuthProvider();
+            
+            // Detecta se é um dispositivo móvel (celular ou tablet)
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            if (isMobile) {
+                // No celular, redireciona na mesma aba para evitar bloqueio de pop-up
+                signInWithRedirect(auth, provider);
+            } else {
+                // No computador, continua usando o pop-up rápido
+                signInWithPopup(auth, provider).catch(err => console.error("Erro login popup:", err));
+            }
+        };
+
+        window.logout = () => { 
+            signOut(auth).then(() => window.location.reload()); 
+        };
         
+        // Vincula os eventos aos botões
         document.getElementById('btn-login-google').addEventListener('click', window.loginGoogle);
         document.getElementById('btn-logout').addEventListener('click', window.logout);
+
+        // 🚀 CAPTURA O RETORNO DO REDIRECIONAMENTO (Necessário para celulares)
+        getRedirectResult(auth)
+            .then((result) => {
+                if (result) {
+                    console.log("Usuário autenticado via redirect com sucesso!");
+                }
+            })
+            .catch((error) => {
+                console.error("Erro ao recuperar resultado do redirecionamento:", error);
+            });
     </script>
     
     <!-- Lógica de Operações Globais da Modal (Fase final de migração) -->
